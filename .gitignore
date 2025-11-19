@@ -2,42 +2,29 @@
 __pycache__/
 *.pyc
 *.pyo
-*.pyd
 .venv/
 venv/
-.env
-.env.*
-*.sqlite3
 *.db
+*.sqlite
+*.sqlite3
 
-# FastAPI
-instance/
+# Environment
+.env
+.env.local
+.env.production
 
 # Node
 node_modules/
-**/node_modules/
-.npm/
 .next/
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+out/
 
-# Logs
-*.log
+# IDE
+.vscode/
+.idea/
 
 # OS
 .DS_Store
 Thumbs.db
-
-# VSCode
-.vscode/
-
-# Misc
-*.bak
-*.swp
-*.swo
-.idea/
 
 # Audio cache
 audio_cache/
