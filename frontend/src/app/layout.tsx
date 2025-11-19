@@ -8,6 +8,9 @@ const inter = Inter({ subsets: ['latin', 'vietnamese'] });
 export const metadata: Metadata = {
   title: 'Multilingual Flashcard App',
   description: 'Learn Chinese, Japanese, Korean, and English with flashcards',
+  icons: {
+    icon: '/favicon.png',
+  },
 };
 
 export default function RootLayout({
