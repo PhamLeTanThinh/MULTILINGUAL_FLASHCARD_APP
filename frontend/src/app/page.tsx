@@ -56,7 +56,7 @@ export default function HomePage() {
             Multilingual Flashcard
           </h1>
           <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
-            Học nè mấy con dê
+            Nhỏ không học, lớn giống thằng làm app này!
           </p>
           <div className="flex items-center justify-center gap-3">
             <ThemeToggle />
