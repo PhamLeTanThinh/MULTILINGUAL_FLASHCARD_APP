@@ -1,19 +1,125 @@
 import os
-import google.generativeai as genai
+import requests
 from typing import List, Dict
 from dotenv import load_dotenv
-import json
 
 load_dotenv()
 
-# Configure Gemini
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
-    # ✅ ĐỔI MODEL TỪ 'gemini-pro' SANG 'gemini-1.5-flash'
-    model = genai.GenerativeModel('gemini-1.5-flash')
-else:
-    model = None
+# Language code mapping
+TATOEBA_LANG_CODES = {
+    "Chinese": "cmn",
+    "Japanese": "jpn",
+    "Korean": "kor",
+    "English": "eng"
+}
+
+
+def search_tatoeba(word: str, from_lang: str, to_lang: str = "vie", limit: int = 10) -> List[Dict]:
+    """
+    Search Tatoeba database for example sentences
+    
+    Args:
+        word: The word to search for
+        from_lang: Source language code (cmn, jpn, kor, eng)
+        to_lang: Target language code (default: vie for Vietnamese)
+        limit: Maximum number of results
+    
+    Returns:
+        List of sentence examples with translations
+    """
+    try:
+        # Tatoeba API endpoint
+        url = "https://tatoeba.org/en/api_v0/search"
+        
+        params = {
+            "query": word,
+            "from": from_lang,
+            "to": to_lang,
+            "orphans": "no",
+            "unapproved": "no",
+            "has_audio": "",
+            "trans_filter": "limit",
+            "trans_to": to_lang,
+            "sort": "relevance"
+        }
+        
+        response = requests.get(url, params=params, timeout=10)
+        response.raise_for_status()
+        
+        data = response.json()
+        results = []
+        
+        if "results" in data:
+            for item in data["results"][:limit]:
+                sentence = {
+                    "target": item["text"],
+                    "vietnamese": "",
+                    "id": item["id"]
+                }
+                
+                # Get Vietnamese translation
+                if "translations" in item and item["translations"]:
+                    # Find Vietnamese translation
+                    for trans in item["translations"]:
+                        if trans and isinstance(trans, list) and len(trans) > 0:
+                            for t in trans:
+                                if t.get("lang") == to_lang:
+                                    sentence["vietnamese"] = t.get("text", "")
+                                    break
+                        if sentence["vietnamese"]:
+                            break
+                
+                # Only add if has Vietnamese translation
+                if sentence["vietnamese"]:
+                    results.append(sentence)
+        
+        print(f"✅ Found {len(results)} examples from Tatoeba")
+        return results
+        
+    except requests.exceptions.RequestException as e:
+        print(f"⚠️ Tatoeba API error: {e}")
+        return []
+    except Exception as e:
+        print(f"⚠️ Tatoeba parsing error: {e}")
+        return []
+
+
+def add_pronunciation(sentences: List[Dict], pronunciation: str, language: str) -> List[Dict]:
+    """Add pronunciation to sentences based on language"""
+    
+    for sentence in sentences:
+        target_text = sentence["target"]
+        
+        if language == "Japanese":
+            try:
+                import pykakasi
+                kks = pykakasi.kakasi()
+                result = kks.convert(target_text)
+                sentence["pronunciation"] = " ".join([item["hira"] for item in result])
+            except:
+                sentence["pronunciation"] = pronunciation
+                
+        elif language == "Chinese":
+            try:
+                from pypinyin import lazy_pinyin
+                sentence["pronunciation"] = " ".join(lazy_pinyin(target_text))
+            except:
+                sentence["pronunciation"] = pronunciation
+                
+        elif language == "Korean":
+            try:
+                from hangul_romanize import Transliter
+                from hangul_romanize.rule import academic
+                transliter = Transliter(academic)
+                sentence["pronunciation"] = transliter.translit(target_text)
+            except:
+                sentence["pronunciation"] = pronunciation
+        else:
+            sentence["pronunciation"] = target_text
+        
+        sentence["context"] = f"Example from Tatoeba (ID: {sentence.get('id', 'N/A')})"
+    
+    return sentences
 
 
 def generate_example_sentences(
@@ -23,143 +129,25 @@ def generate_example_sentences(
     language: str
 ) -> List[Dict]:
     """
-    Generate 3 natural, COMPLEX example sentences using AI
-    NO HARDCODING - 100% AI generated
+    Generate example sentences from Tatoeba database
     """
-    if not model:
-        raise Exception("Gemini API key not configured. Please set GEMINI_API_KEY in .env file")
     
-    language_info = {
-        "Chinese": {
-            "name": "tiếng Trung (中文)",
-            "instruction": "Tạo 3 câu tiếng Trung tự nhiên"
-        },
-        "Japanese": {
-            "name": "tiếng Nhật (日本語)",
-            "instruction": "Tạo 3 câu tiếng Nhật tự nhiên"
-        },
-        "Korean": {
-            "name": "tiếng Hàn (한국어)",
-            "instruction": "Tạo 3 câu tiếng Hàn tự nhiên"
-        },
-        "English": {
-            "name": "tiếng Anh (English)",
-            "instruction": "Create 3 natural English sentences"
-        }
-    }
+    lang_code = TATOEBA_LANG_CODES.get(language, "eng")
     
-    lang_info = language_info.get(language, language_info["English"])
+    print(f"🔍 Searching Tatoeba for: {target_language} ({language})")
     
-    prompt = f"""You are a professional {lang_info['name']} teacher with 15 years of experience.
-
-TASK: {lang_info['instruction']} using the word/phrase "{target_language}" (meaning in Vietnamese: "{vietnamese}").
-
-Word Information:
-- Original word/phrase: {target_language}
-- Pronunciation: {pronunciation}
-- Vietnamese meaning: {vietnamese}
-
-CRITICAL REQUIREMENTS:
-
-1. **SENTENCES MUST BE COMPLEX AND NATURAL**:
-   - Each sentence must have 2-3 clauses connected together
-   - Use conjunctions: because, so, when, although, if, in order to, etc.
-   - Minimum length: 12-20 words per sentence
-   - Sound like native speakers actually talk
-
-2. **MUST HAVE REAL CONTEXT**:
-   - Daily life situations: shopping, meeting friends, working, cooking, studying, entertainment
-   - Include specific people, time, place
-   - Show actions and results/reasons/purposes
-   - Express emotions and thoughts
-
-3. **USE VOCABULARY CORRECTLY IN CONTEXT**:
-   - The word "{target_language}" must appear NATURALLY in the sentence
-   - Correct grammatical position (verb, noun, adjective, etc.)
-   - Appropriate for real-life situations
-   - Not forced or illogical
-
-4. **GRAMMAR MUST BE 100% CORRECT**:
-   - Correct tenses and aspects
-   - Correct particles (は、が、を、に、で for Japanese)
-   - Correct conjunctions between clauses
-   - Appropriate honorifics if needed
-
-5. **THREE LEVELS OF COMPLEXITY**:
-   - Sentence 1 (Medium): 2 clauses, simple conjunctions (and, but, so)
-   - Sentence 2 (Complex): 3 clauses, advanced grammar (when...then, because...so, although...but)
-   - Sentence 3 (Very Complex): Multiple clauses with conditionals/suppositions/purposes (if...then, in order to...must)
-
-Return ONLY pure JSON (NO markdown, NO ```):
-[
-  {{
-    "target": "Complex sentence 12-20 words with 2-3 clauses, using '{target_language}' naturally",
-    "pronunciation": "Complete accurate pronunciation of every word",
-    "vietnamese": "Natural, flowing Vietnamese translation",
-    "context": "Describe the specific situation"
-  }},
-  {{
-    "target": "More complex sentence with more clauses and advanced grammar",
-    "pronunciation": "Complete pronunciation",
-    "vietnamese": "Natural translation",
-    "context": "Situation description"
-  }},
-  {{
-    "target": "Very complex sentence with conditionals/suppositions or purposes",
-    "pronunciation": "Complete pronunciation",
-    "vietnamese": "Natural translation",
-    "context": "Situation description"
-  }}
-]
-
-RETURN ONLY THE JSON ARRAY, NO OTHER TEXT, NO EXPLANATIONS, NO MARKDOWN.
-"""
+    tatoeba_results = search_tatoeba(target_language, lang_code, "vie", limit=10)
     
-    try:
-        response = model.generate_content(prompt)
-        result_text = response.text.strip()
-        
-        # Clean up response - remove markdown if present
-        if result_text.startswith("```"):
-            lines = result_text.split("\n")
-            result_text = "\n".join(lines[1:-1]) if len(lines) > 2 else result_text
-            if result_text.startswith("json"):
-                result_text = result_text[4:].strip()
-        
-        # Remove any trailing markdown
-        if result_text.endswith("```"):
-            result_text = result_text[:-3].strip()
-        
-        # Parse JSON
-        examples = json.loads(result_text)
-        
-        # Validate results
-        if not isinstance(examples, list) or len(examples) < 3:
-            print(f"Invalid response format. Got: {type(examples)}, length: {len(examples) if isinstance(examples, list) else 'N/A'}")
-            raise ValueError("Invalid response format from AI")
-        
-        # Validate each example
-        for i, ex in enumerate(examples[:3]):
-            if not all(key in ex for key in ['target', 'pronunciation', 'vietnamese', 'context']):
-                print(f"Example {i} missing required keys. Got: {ex.keys()}")
-                raise ValueError(f"Example {i} has invalid structure")
-            
-            # Check minimum length
-            if len(ex.get('target', '')) < 10:
-                print(f"Example {i} too short: {ex.get('target', '')}")
-                raise ValueError(f"Example {i} sentence too simple")
-        
-        return examples[:3]
-    
-    except json.JSONDecodeError as e:
-        print(f"JSON Parse Error: {e}")
-        print(f"Raw response: {result_text[:500]}")
-        raise Exception(f"AI returned invalid JSON. Please check GEMINI_API_KEY or try again.")
-    
-    except Exception as e:
-        print(f"AI generation error: {e}")
-        print(f"Response text: {result_text[:500] if 'result_text' in locals() else 'No response'}")
-        raise Exception(f"Failed to generate examples: {str(e)}. Please check your GEMINI_API_KEY.")
+    if len(tatoeba_results) >= 3:
+        sentences = tatoeba_results[:3]
+        sentences = add_pronunciation(sentences, pronunciation, language)
+        print(f"✅ Using {len(sentences)} examples from Tatoeba")
+        return sentences
+    elif len(tatoeba_results) > 0:
+        sentences = add_pronunciation(tatoeba_results, pronunciation, language)
+        return sentences
+    else:
+        raise Exception(f"No examples found in Tatoeba for: {target_language}")
 
 
 def generate_dialogue(
@@ -169,120 +157,27 @@ def generate_dialogue(
     language: str
 ) -> List[Dict]:
     """
-    Generate a natural, REALISTIC dialogue using AI
-    NO HARDCODING - 100% AI generated
+    Generate dialogue from Tatoeba examples
     """
-    if not model:
-        raise Exception("Gemini API key not configured. Please set GEMINI_API_KEY in .env file")
     
-    language_info = {
-        "Chinese": "tiếng Trung (中文)",
-        "Japanese": "tiếng Nhật (日本語)",
-        "Korean": "tiếng Hàn (한국어)",
-        "English": "tiếng Anh (English)"
-    }
+    lang_code = TATOEBA_LANG_CODES.get(language, "eng")
+    tatoeba_examples = search_tatoeba(target_language, lang_code, "vie", limit=5)
     
-    lang_name = language_info.get(language, "tiếng Anh")
+    if not tatoeba_examples or len(tatoeba_examples) < 3:
+        raise Exception(f"Not enough examples found in Tatoeba for dialogue: {target_language}")
     
-    prompt = f"""You are a professional scriptwriter specializing in {lang_name} dialogues.
-
-TASK: Create a NATURAL, REALISTIC dialogue between 2 people (A and B) in a daily life situation, using the word "{target_language}" (meaning: "{vietnamese}").
-
-Word Information:
-- Word/phrase: {target_language}
-- Pronunciation: {pronunciation}
-- Vietnamese meaning: {vietnamese}
-
-REQUIREMENTS:
-
-1. **SPECIFIC AND REALISTIC SITUATION**:
-   - Choose a situation appropriate to the vocabulary
-   - Possible situations: meeting friends, dining out, shopping, asking for help, making phone calls, group meetings, etc.
-   - Clear context (time, place, relationship between A and B)
-
-2. **NATURAL DIALOGUE LIKE REAL PEOPLE**:
-   - 4-5 exchanges between A and B
-   - Each line is substantial (not just 1-2 words)
-   - Natural reactions and real emotions
-   - Include questions, answers, suggestions
-   - Like how native speakers actually talk
-
-3. **USE VOCABULARY CORRECTLY AND NATURALLY**:
-   - The word "{target_language}" must appear NATURALLY in the dialogue
-   - Not forced, must fit the situation
-   - Show real practical usage of the word
-   - Can appear multiple times if appropriate
-
-4. **GRAMMAR AND STYLE**:
-   - 100% correct grammar
-   - Appropriate relationship level (formal/informal/friends/colleagues)
-   - Appropriate sentence-ending particles
-   - Natural expressions
-
-Return ONLY pure JSON (NO markdown, NO ```):
-[
-  {{
-    "speaker": "A",
-    "target": "Long, natural line with specific context, using '{target_language}' naturally",
-    "pronunciation": "Complete accurate pronunciation",
-    "vietnamese": "Natural Vietnamese translation"
-  }},
-  {{
-    "speaker": "B",
-    "target": "Natural response with reactions or emotions",
-    "pronunciation": "Complete pronunciation",
-    "vietnamese": "Natural translation"
-  }},
-  {{
-    "speaker": "A",
-    "target": "Follow-up response or suggestion",
-    "pronunciation": "Complete pronunciation",
-    "vietnamese": "Natural translation"
-  }},
-  {{
-    "speaker": "B",
-    "target": "Agreement/disagreement/response with reason",
-    "pronunciation": "Complete pronunciation",
-    "vietnamese": "Natural translation"
-  }}
-]
-
-RETURN ONLY THE JSON ARRAY, NO EXPLANATORY TEXT, NO MARKDOWN.
-"""
+    # Convert examples to dialogue format
+    dialogue = []
+    speakers = ["A", "B"]
     
-    try:
-        response = model.generate_content(prompt)
-        result_text = response.text.strip()
-        
-        # Clean up response
-        if result_text.startswith("```"):
-            lines = result_text.split("\n")
-            result_text = "\n".join(lines[1:-1]) if len(lines) > 2 else result_text
-            if result_text.startswith("json"):
-                result_text = result_text[4:].strip()
-        
-        if result_text.endswith("```"):
-            result_text = result_text[:-3].strip()
-        
-        # Parse JSON
-        dialogue = json.loads(result_text)
-        
-        if not isinstance(dialogue, list) or len(dialogue) < 3:
-            raise ValueError("Invalid dialogue format")
-        
-        # Validate dialogue structure
-        for i, line in enumerate(dialogue[:5]):
-            if not all(key in line for key in ['speaker', 'target', 'pronunciation', 'vietnamese']):
-                raise ValueError(f"Dialogue line {i} has invalid structure")
-        
-        return dialogue[:5]
+    for i, example in enumerate(tatoeba_examples[:5]):
+        dialogue.append({
+            "speaker": speakers[i % 2],
+            "target": example["target"],
+            "pronunciation": example.get("pronunciation", pronunciation),
+            "vietnamese": example["vietnamese"]
+        })
     
-    except json.JSONDecodeError as e:
-        print(f"JSON Parse Error: {e}")
-        print(f"Raw response: {result_text[:500]}")
-        raise Exception(f"AI returned invalid JSON for dialogue. Please try again.")
-    
-    except Exception as e:
-        print(f"AI generation error: {e}")
-        print(f"Response text: {result_text[:500] if 'result_text' in locals() else 'No response'}")
-        raise Exception(f"Failed to generate dialogue: {str(e)}")
+    dialogue = add_pronunciation(dialogue, pronunciation, language)
+    print(f"✅ Created dialogue from {len(dialogue)} Tatoeba examples")
+    return dialogue
