@@ -16,7 +16,7 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(title="Flashcard API")
 
 # CORS
-origins = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,https://bou-multilingual-flashcard-app.vercel.app").split(",")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
