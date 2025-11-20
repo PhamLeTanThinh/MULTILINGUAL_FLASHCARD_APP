@@ -205,10 +205,6 @@ export default function UserDecksPage() {
               API_BASE && deck.id
                 ? `${API_BASE}/decks/${deck.id}/export-csv`
                 : null;
-                console.log('Download URL:', downloadUrl);
-                console.log('API_BASE:', API_BASE);
-                console.log('deck.id: ', deck.id);
-
             return (
               <div
                 key={deck.id}
