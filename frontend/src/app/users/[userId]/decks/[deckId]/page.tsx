@@ -64,6 +64,7 @@ export default function DeckDetailPage() {
         });
         toast.success('Cập nhật flashcard thành công!');
         setEditingCard(null);
+        setActiveTab(null);
       } else {
         await flashcardApi.create({
           deck_id: deckId,
@@ -74,10 +75,11 @@ export default function DeckDetailPage() {
         toast.success('Tạo flashcard thành công!');
       }
 
+      // Reset input sau mỗi lần submit
       setVietnamese('');
       setPronunciation('');
       setTargetLanguage('');
-      setActiveTab(null);
+
       refetch();
     } catch (error) {
       toast.error('Thao tác thất bại!');
@@ -212,7 +214,7 @@ export default function DeckDetailPage() {
 
           {/* Mobile Menu Dropdown */}
           {showMobileMenu && (
-            <div className="md:hidden flex flex-col gap-2 pt-4 border-t border-border animate-slide-in-bottom">
+            <div className="md:hidden flex flex-col gap-2 pt-4 border-t border-border animate-fade-soft">
               <Button
                 onClick={() => {
                   router.push(`/users/${userId}/decks/${deckId}/quiz`);
@@ -278,7 +280,7 @@ export default function DeckDetailPage() {
         {activeTab === 'manual' && (
           <form
             onSubmit={handleCreateCard}
-            className="mb-4 sm:mb-6 bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-md transition-colors animate-slide-in-bottom"
+            className="mb-4 sm:mb-6 bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-md transition-colors animate-fade-soft"
           >
             <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-foreground">
               {editingCard ? 'Sửa flashcard' : 'Thêm flashcard mới'}
@@ -353,14 +355,14 @@ export default function DeckDetailPage() {
 
         {/* CSV Import - Responsive */}
         {activeTab === 'csv' && (
-          <div className="mb-4 sm:mb-6 animate-slide-in-bottom">
+          <div className="mb-4 sm:mb-6 animate-fade-soft">
             <CSVImport deckId={deckId} onSuccess={refetch} />
           </div>
         )}
 
         {/* Dictionary Search - Responsive */}
         {activeTab === 'dictionary' && deck && (
-          <div className="mb-4 sm:mb-6 bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-md transition-colors animate-slide-in-bottom">
+          <div className="mb-4 sm:mb-6 bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-md transition-colors animate-fade-soft">
             <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-foreground">
               Tìm từ trong từ điển
             </h3>
@@ -504,6 +506,20 @@ export default function DeckDetailPage() {
         }
         .hide-scrollbar::-webkit-scrollbar {
           display: none;
+        }
+
+        @keyframes fadeSoft {
+          from {
+            opacity: 0;
+            transform: scale(0.97);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        .animate-fade-soft {
+          animation: fadeSoft 0.58s ease-out;
         }
       `}</style>
     </main>
