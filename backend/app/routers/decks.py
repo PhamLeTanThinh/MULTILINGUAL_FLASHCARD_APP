@@ -11,7 +11,10 @@ router = APIRouter(prefix="/decks", tags=["decks"])
 
 @router.get("/user/{user_id}", response_model=List[schemas.Deck])
 def read_user_decks(user_id: int, db: Session = Depends(get_db)):
-    return crud.get_decks_by_user(db, user_id=user_id)
+    decks = crud.get_decks_by_user(db, user_id=user_id)
+    for deck in decks:
+        deck.flashcard_count = len(deck.flashcards)
+    return decks
 
 @router.get("/{deck_id}", response_model=schemas.Deck)
 def read_deck(deck_id: int, db: Session = Depends(get_db)):
