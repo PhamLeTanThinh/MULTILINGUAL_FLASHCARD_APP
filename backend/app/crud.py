@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from . import models, schemas
 
 # ==================== USER CRUD ====================
@@ -18,7 +18,8 @@ def create_user(db: Session, user: schemas.UserCreate):
     db_user = models.User(
         name=user.name,
         avatar=user.avatar,
-        last_activity_at=datetime.utcnow()  # Set last_activity khi tạo
+        # Dùng datetime aware (UTC) để khớp với DateTime(timezone=True)
+        last_activity_at=datetime.now(timezone.utc)
     )
     db.add(db_user)
     db.commit()
@@ -49,14 +50,16 @@ def update_user_activity(db: Session, user_id: int):
     """Update last_activity_at khi user truy cập"""
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if user:
-        user.last_activity_at = datetime.utcnow()
+        # Dùng datetime aware (UTC)
+        user.last_activity_at = datetime.now(timezone.utc)
         db.commit()
         db.refresh(user)
     return user
 
 def get_inactive_users(db: Session, days: int = 30):
     """Lấy danh sách users không hoạt động quá X ngày"""
-    threshold_date = datetime.utcnow() - timedelta(days=days)
+    # threshold cũng phải là datetime aware
+    threshold_date = datetime.now(timezone.utc) - timedelta(days=days)
     return db.query(models.User).filter(
         models.User.last_activity_at < threshold_date
     ).all()
@@ -71,9 +74,24 @@ def delete_user_cascade(db: Session, user_id: int):
     return False
 
 def get_days_until_deletion(user: models.User) -> int:
-    """Tính số ngày còn lại trước khi bị xóa"""
-    days_inactive = (datetime.utcnow() - user.last_activity_at).days
+    """Tính số ngày còn lại trước khi bị xóa (sau 30 ngày không hoạt động)"""
+
+    # Nếu chưa có last_activity_at thì cho mặc định còn 30 ngày
+    if not user.last_activity_at:
+        return 30
+
+    # now là datetime aware (UTC)
+    now_utc = datetime.now(timezone.utc)
+
+    last = user.last_activity_at
+
+    # Nếu DB trả về naive datetime (trường hợp SQLite local) thì convert sang UTC
+    if last.tzinfo is None:
+        last = last.replace(tzinfo=timezone.utc)
+
+    days_inactive = (now_utc - last).days
     days_remaining = 30 - days_inactive
+
     return max(0, days_remaining)
 
 # ==================== DECK CRUD ====================

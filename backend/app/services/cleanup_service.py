@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from ..database import SessionLocal
 from .. import crud
 import logging
@@ -16,24 +16,24 @@ def cleanup_inactive_users():
     try:
         # Lấy danh sách users không hoạt động
         inactive_users = crud.get_inactive_users(db, days=30)
-        
+
         if not inactive_users:
             logger.info("No inactive users to delete")
             return
-        
+
         deleted_count = 0
         for user in inactive_users:
             logger.info(f"Deleting inactive user: {user.name} (ID: {user.id})")
             logger.info(f"Last activity: {user.last_activity_at}")
-            
+
             # Xóa user và tất cả data liên quan
             success = crud.delete_user_cascade(db, user.id)
             if success:
                 deleted_count += 1
-        
+
         logger.info(f"Cleanup completed: {deleted_count} users deleted")
         return deleted_count
-    
+
     except Exception as e:
         logger.error(f"Error during cleanup: {e}")
         db.rollback()
@@ -41,28 +41,30 @@ def cleanup_inactive_users():
     finally:
         db.close()
 
+
 def get_cleanup_stats(db: Session):
     """
     Lấy thống kê về users sắp bị xóa
     """
-    from datetime import timedelta
-    from sqlalchemy import and_
-    
-    now = datetime.utcnow()
-    
-    # Users sẽ bị xóa trong 7 ngày tới
-    warning_threshold = now - timedelta(days=23)  # 30 - 7 = 23
+
+    # Dùng datetime aware (UTC)
+    now = datetime.now(timezone.utc)
+
+    # Các mốc thời gian cũng phải aware
+    warning_threshold = now - timedelta(days=23)   # 30 - 7 = 23
     deletion_threshold = now - timedelta(days=30)
-    
+
+    from sqlalchemy import and_
+
     users_at_risk = db.query(crud.models.User).filter(
         and_(
             crud.models.User.last_activity_at < warning_threshold,
             crud.models.User.last_activity_at >= deletion_threshold
         )
     ).all()
-    
+
     users_to_delete = crud.get_inactive_users(db, days=30)
-    
+
     return {
         "users_at_risk_7_days": len(users_at_risk),
         "users_to_delete_now": len(users_to_delete),
@@ -71,7 +73,10 @@ def get_cleanup_stats(db: Session):
                 "id": user.id,
                 "name": user.name,
                 "last_activity": user.last_activity_at,
-                "days_inactive": (now - user.last_activity_at).days,
+                "days_inactive": (now - (
+                    user.last_activity_at if user.last_activity_at.tzinfo 
+                    else user.last_activity_at.replace(tzinfo=timezone.utc)
+                )).days,
                 "days_until_deletion": crud.get_days_until_deletion(user)
             }
             for user in users_at_risk + users_to_delete
