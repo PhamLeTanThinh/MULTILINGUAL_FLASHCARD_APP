@@ -3,7 +3,18 @@
 import { useQuery } from '@tanstack/react-query';
 import { deckApi, flashcardApi, Flashcard, ExampleSentence, DialogueLine } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
-import { ArrowLeft, ChevronLeft, ChevronRight, RotateCcw, ArrowLeftRight, Sparkles, BookOpen, MessageCircle, Loader2, Volume2 } from 'lucide-react';
+import {
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  RotateCcw,
+  ArrowLeftRight,
+  Sparkles,
+  BookOpen,
+  MessageCircle,
+  Loader2,
+  Volume2
+} from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { FlashCard } from '@/components/FlashCard';
@@ -20,8 +31,13 @@ export default function StudyModePage() {
   const [shuffledCards, setShuffledCards] = useState<Flashcard[]>([]);
   const [isShuffled, setIsShuffled] = useState(false);
   const [cardKey, setCardKey] = useState(0);
+
+  // mặt nào hiển thị trước: true = ngôn ngữ đích, false = Tiếng Việt
   const [startWithTargetLanguage, setStartWithTargetLanguage] = useState(true);
-  
+
+  // 🔹 MỚI: phiên âm đi kèm với mặt nào: 'target' = ngôn ngữ đích, 'vi' = Tiếng Việt
+  const [pronunciationSide, setPronunciationSide] = useState<'target' | 'vi'>('vi');
+
   // AI Examples states
   const [showExamples, setShowExamples] = useState(false);
   const [exampleType, setExampleType] = useState<'sentence' | 'dialogue'>('sentence');
@@ -38,7 +54,8 @@ export default function StudyModePage() {
 
   const { data: flashcards } = useQuery({
     queryKey: ['flashcards', deckId],
-    queryFn: () => flashcardApi.getByDeck(deckId).then((res) => res.data),refetchOnWindowFocus: false,
+    queryFn: () => flashcardApi.getByDeck(deckId).then((res) => res.data),
+    refetchOnWindowFocus: false,
     refetchInterval: false,
   });
 
@@ -54,7 +71,7 @@ export default function StudyModePage() {
     setShuffledCards(shuffled);
     setCurrentIndex(0);
     setIsShuffled(true);
-    setCardKey(prev => prev + 1);
+    setCardKey((prev) => prev + 1);
     setShowExamples(false);
     setExamples(null);
   };
@@ -64,28 +81,28 @@ export default function StudyModePage() {
     setShuffledCards(flashcards);
     setCurrentIndex(0);
     setIsShuffled(false);
-    setCardKey(prev => prev + 1);
+    setCardKey((prev) => prev + 1);
     setShowExamples(false);
     setExamples(null);
   };
 
   const handlePrevious = () => {
     setCurrentIndex((prev) => Math.max(0, prev - 1));
-    setCardKey(prev => prev + 1);
+    setCardKey((prev) => prev + 1);
     setShowExamples(false);
     setExamples(null);
   };
 
   const handleNext = () => {
     setCurrentIndex((prev) => Math.min(shuffledCards.length - 1, prev + 1));
-    setCardKey(prev => prev + 1);
+    setCardKey((prev) => prev + 1);
     setShowExamples(false);
     setExamples(null);
   };
 
   const toggleCardSide = () => {
-    setStartWithTargetLanguage(prev => !prev);
-    setCardKey(prev => prev + 1);
+    setStartWithTargetLanguage((prev) => !prev);
+    setCardKey((prev) => prev + 1);
   };
 
   const handleKeyPress = (e: KeyboardEvent) => {
@@ -96,16 +113,17 @@ export default function StudyModePage() {
   useEffect(() => {
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shuffledCards.length]);
 
   // AI Examples functions
   const handleGenerateExamples = async (type: 'sentence' | 'dialogue') => {
     if (!shuffledCards) return;
-    
+
     const currentCard = shuffledCards[currentIndex];
     setExampleType(type);
     setLoadingExamples(true);
-    
+
     try {
       const response = await flashcardApi.generateExample(currentCard.id, type);
       setExamples(response.data.examples);
@@ -121,24 +139,24 @@ export default function StudyModePage() {
 
   const playAudio = async (text: string, language: string) => {
     if (isPlaying) return;
-    
+
     setIsPlaying(true);
-    
+
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
       const audioUrl = `${apiUrl}/tts/speak?text=${encodeURIComponent(text)}&language=${language}`;
-      
+
       const audio = new Audio(audioUrl);
-      
+
       audio.onended = () => {
         setIsPlaying(false);
       };
-      
+
       audio.onerror = () => {
         toast.error('Không thể phát âm thanh');
         setIsPlaying(false);
       };
-      
+
       await audio.play();
     } catch (error) {
       toast.error('Lỗi khi phát âm thanh');
@@ -192,14 +210,27 @@ export default function StudyModePage() {
           <ThemeToggle />
         </div>
 
+        {/* Nút mode học */}
         <div className="flex justify-center gap-2 mb-6">
-          <Button 
-            variant={startWithTargetLanguage ? "default" : "outline"} 
+          <Button
+            variant={startWithTargetLanguage ? 'default' : 'outline'}
             onClick={toggleCardSide}
           >
             <ArrowLeftRight className="w-4 h-4 mr-2" />
             {startWithTargetLanguage ? 'Ngôn ngữ đích trước' : 'Tiếng Việt trước'}
           </Button>
+
+          {/* 🔹 Nút mới: chọn mặt kèm phiên âm */}
+          <Button
+            variant={pronunciationSide === 'target' ? 'default' : 'outline'}
+            onClick={() =>
+              setPronunciationSide((prev) => (prev === 'target' ? 'vi' : 'target'))
+            }
+          >
+            ㄱ 拼 Phiên âm cùng&nbsp;
+            {pronunciationSide === 'target' ? 'ngôn ngữ đích' : 'Tiếng Việt'}
+          </Button>
+
           <Button variant="outline" onClick={handleShuffle}>
             <RotateCcw className="w-4 h-4 mr-2" />
             Xáo trộn
@@ -211,6 +242,7 @@ export default function StudyModePage() {
           )}
         </div>
 
+        {/* Header deck + progress */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6 transition-colors">
           <div className="flex justify-between items-center mb-4">
             <h1 className="text-2xl font-bold text-foreground">{deck?.name}</h1>
@@ -227,21 +259,22 @@ export default function StudyModePage() {
           </div>
         </div>
 
-        {/* FLASHCARD VỚI NÚT ĐIỀU HƯỚNG - GLASS MORPHISM */}
+        {/* FLASHCARD + nút điều hướng */}
         <div className="relative mb-8">
-          {/* Flashcard */}
           <div className="px-20">
             {currentCard && deck && (
-              <FlashCard 
-                key={cardKey} 
-                flashcard={currentCard} 
+              <FlashCard
+                key={cardKey}
+                flashcard={currentCard}
                 language={deck.language}
                 startWithTargetLanguage={startWithTargetLanguage}
+                // 🔹 truyền thêm thông tin “phiên âm đi với mặt nào”
+                pronunciationSide={pronunciationSide}
               />
             )}
           </div>
 
-          {/* Nút Trước - Glass Morphism */}
+          {/* Nút Trước */}
           <button
             onClick={handlePrevious}
             disabled={currentIndex === 0}
@@ -253,16 +286,21 @@ export default function StudyModePage() {
               shadow-xl
               flex items-center justify-center
               transition-all duration-300
-              ${currentIndex === 0 
-                ? 'opacity-20 cursor-not-allowed' 
-                : 'hover:scale-110 hover:bg-white/90 dark:hover:bg-gray-800/90 active:scale-95 hover:shadow-2xl'
+              ${
+                currentIndex === 0
+                  ? 'opacity-20 cursor-not-allowed'
+                  : 'hover:scale-110 hover:bg-white/90 dark:hover:bg-gray-800/90 active:scale-95 hover:shadow-2xl'
               }
             `}
           >
-            <ChevronLeft className={`w-7 h-7 ${currentIndex === 0 ? 'text-gray-400' : 'text-primary'}`} />
+            <ChevronLeft
+              className={`w-7 h-7 ${
+                currentIndex === 0 ? 'text-gray-400' : 'text-primary'
+              }`}
+            />
           </button>
 
-          {/* Nút Tiếp - Glass Morphism */}
+          {/* Nút Tiếp */}
           <button
             onClick={handleNext}
             disabled={currentIndex === shuffledCards.length - 1}
@@ -274,13 +312,18 @@ export default function StudyModePage() {
               shadow-xl
               flex items-center justify-center
               transition-all duration-300
-              ${currentIndex === shuffledCards.length - 1
-                ? 'opacity-20 cursor-not-allowed'
-                : 'hover:scale-110 hover:bg-white/90 dark:hover:bg-gray-800/90 active:scale-95 hover:shadow-2xl'
+              ${
+                currentIndex === shuffledCards.length - 1
+                  ? 'opacity-20 cursor-not-allowed'
+                  : 'hover:scale-110 hover:bg-white/90 dark:hover:bg-gray-800/90 active:scale-95 hover:shadow-2xl'
               }
             `}
           >
-            <ChevronRight className={`w-7 h-7 ${currentIndex === shuffledCards.length - 1 ? 'text-gray-400' : 'text-primary'}`} />
+            <ChevronRight
+              className={`w-7 h-7 ${
+                currentIndex === shuffledCards.length - 1 ? 'text-gray-400' : 'text-primary'
+              }`}
+            />
           </button>
         </div>
 
@@ -333,43 +376,67 @@ export default function StudyModePage() {
               </div>
 
               <div className="space-y-4">
-                {exampleType === 'sentence' && (examples as ExampleSentence[]).map((example, index) => (
-                  <div key={index} className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-border">
-                    <div className="flex items-start justify-between mb-2">
-                      <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-1 rounded">
-                        {example.context}
-                      </span>
-                      <button
-                        onClick={() => playAudio(example.target, deck?.language || 'EN')}
-                        className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
-                      >
-                        <Volume2 className="w-4 h-4" />
-                      </button>
+                {exampleType === 'sentence' &&
+                  (examples as ExampleSentence[]).map((example, index) => (
+                    <div
+                      key={index}
+                      className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-border"
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-1 rounded">
+                          {example.context}
+                        </span>
+                        <button
+                          onClick={() =>
+                            playAudio(example.target, deck?.language || 'EN')
+                          }
+                          className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                        >
+                          <Volume2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <p className="text-xl font-bold text-foreground mb-2">
+                        {example.target}
+                      </p>
+                      <p className="text-sm text-muted-foreground mb-1">
+                        {example.pronunciation}
+                      </p>
+                      <p className="text-sm text-muted-foreground italic">
+                        {example.vietnamese}
+                      </p>
                     </div>
-                    <p className="text-xl font-bold text-foreground mb-2">{example.target}</p>
-                    <p className="text-sm text-muted-foreground mb-1">{example.pronunciation}</p>
-                    <p className="text-sm text-muted-foreground italic">{example.vietnamese}</p>
-                  </div>
-                ))}
+                  ))}
 
-                {exampleType === 'dialogue' && (examples as DialogueLine[]).map((line, index) => (
-                  <div key={index} className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-border">
-                    <div className="flex items-start justify-between mb-2">
-                      <span className="text-xs font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">
-                        {line.speaker}
-                      </span>
-                      <button
-                        onClick={() => playAudio(line.target, deck?.language || 'EN')}
-                        className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
-                      >
-                        <Volume2 className="w-4 h-4" />
-                      </button>
+                {exampleType === 'dialogue' &&
+                  (examples as DialogueLine[]).map((line, index) => (
+                    <div
+                      key={index}
+                      className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-border"
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <span className="text-xs font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">
+                          {line.speaker}
+                        </span>
+                        <button
+                          onClick={() =>
+                            playAudio(line.target, deck?.language || 'EN')
+                          }
+                          className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                        >
+                          <Volume2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <p className="text-xl font-bold text-foreground mb-2">
+                        {line.target}
+                      </p>
+                      <p className="text-sm text-muted-foreground mb-1">
+                        {line.pronunciation}
+                      </p>
+                      <p className="text-sm text-muted-foreground italic">
+                        {line.vietnamese}
+                      </p>
                     </div>
-                    <p className="text-xl font-bold text-foreground mb-2">{line.target}</p>
-                    <p className="text-sm text-muted-foreground mb-1">{line.pronunciation}</p>
-                    <p className="text-sm text-muted-foreground italic">{line.vietnamese}</p>
-                  </div>
-                ))}
+                  ))}
               </div>
             </div>
           )}
