@@ -5,7 +5,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 import os
 
-from .routers import users, decks, flashcards, dictionary, quiz, tts
+from .routers import users, decks, flashcards, dictionary, quiz, tts, loyalty
 from .database import engine, Base, get_db, SessionLocal  # ← Thêm SessionLocal
 from .services.cleanup_service import cleanup_inactive_users
 
@@ -32,6 +32,7 @@ app.include_router(flashcards.router, prefix="/api")
 app.include_router(dictionary.router, prefix="/api")
 app.include_router(quiz.router, prefix="/api")
 app.include_router(tts.router, prefix="/api")
+app.include_router(loyalty.router, prefix="/api")   # ← ← ← THÊM DÒNG NÀY !!!
 
 # Setup APScheduler
 scheduler = BackgroundScheduler()

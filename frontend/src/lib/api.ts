@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://multilingualflashcardapp-production.up.railway.app/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
 export const api = axios.create({
   baseURL: API_URL,
@@ -19,6 +19,10 @@ export interface User {
   last_activity_at: string;  // ← MỚI
   days_until_deletion?: number;  // ← MỚI
   deck_count?: number;
+
+  // Loyalty
+  points?: number;
+  theme?: string;
 }
 export interface Deck {
   id: number;
@@ -164,3 +168,48 @@ export const ttsApi = {
   speak: (text: string, language: string) =>
     `${API_URL}/tts/speak?text=${encodeURIComponent(text)}&language=${language}`,
 };
+
+// Loyalty API
+export const loyaltyApi = {
+  get: (userId: number) =>
+    api.get(`/loyalty/users/${userId}`),
+
+  redeemAvatar: (userId: number, avatar: string) =>
+    api.post('/loyalty/redeem/avatar', {
+      user_id: userId,
+      avatar
+    }),
+
+  redeemTheme: (userId: number, theme: string) =>
+    api.post('/loyalty/redeem/theme', {
+      user_id: userId,
+      theme
+    }),
+
+  redeemCustomTheme: (
+    userId: number,
+    fromColor: string,
+    viaColor: string,
+    toColor: string,
+    cost: number = 100
+  ) =>
+    api.post('/loyalty/redeem/custom-theme', {
+      user_id: userId,
+      from_color: fromColor,
+      via_color: viaColor,
+      to_color: toColor,
+      cost
+    }),
+  redeemCustomAvatar: (
+    userId: number,
+    emoji: string,
+    cost: number = 100
+  ) =>
+    api.post('/loyalty/redeem/custom-avatar', {
+      user_id: userId,
+      emoji,
+      cost,
+    }),
+
+};
+

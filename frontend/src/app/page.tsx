@@ -8,12 +8,15 @@ import { useRouter } from 'next/navigation';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useState } from 'react';
 import { UserModal } from '@/components/UserModal';
+import LoyaltyShop from '@/components/LoyaltyShop';
 
 export default function HomePage() {
   const router = useRouter();
   const [showModal, setShowModal] = useState(false);
+  const [showShop, setShowShop] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
 
-  const { data: users, isLoading } = useQuery({
+  const { data: users, isLoading, refetch } = useQuery({
     queryKey: ['users'],
     queryFn: () => userApi.getAll().then((res) => res.data),
     refetchOnWindowFocus: false,
@@ -44,6 +47,45 @@ export default function HomePage() {
     return 'bg-green-500';
   };
 
+  // Theme base class (không tính gradient custom)
+  const getThemeClass = (theme: string | undefined) => {
+    const key = theme?.startsWith('custom:') ? 'custom' : theme;
+    if (key === 'sakura') return 'bg-pink-50 dark:bg-pink-950/40';
+    if (key === 'dark') return 'bg-gray-900/90';
+    if (key === 'forest') return 'bg-emerald-50 dark:bg-emerald-950/40';
+    if (key === 'custom') return 'bg-white/90 dark:bg-gray-900/80';
+    return 'bg-white dark:bg-gray-800';
+  };
+
+  // Inline style cho custom theme: custom:#c1,#c2,#c3
+  const getThemeStyle = (theme: string | undefined) => {
+    if (!theme || !theme.startsWith('custom:')) return undefined;
+    try {
+      const raw = theme.slice('custom:'.length);
+      const parts = raw.split(',');
+      const from = parts[0] || '#4f46e5';
+      const via = parts[1] || from;
+      const to = parts[2] || via;
+      return {
+        backgroundImage: `linear-gradient(to bottom right, ${from}, ${via}, ${to})`,
+      } as React.CSSProperties;
+    } catch {
+      return undefined;
+    }
+  };
+
+  const avatarEmojiMap: Record<string, string> = {
+    default: "🙂",
+    cat: "😼",
+    panda: "🐼",
+    dragon: "🐉",
+    fox: "🦊",
+    robot: "🤖",
+    unicorn: "🦄",
+    alien: "👽",
+    ghost: "👻",
+  };
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-950 dark:via-gray-900 dark:to-slate-900">
       {/* Main Content */}
@@ -71,6 +113,7 @@ export default function HomePage() {
             </Button>
           </div>
         </div>
+
         {/* Warning Banner */}
         <div className="mb-8 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/10 dark:to-orange-900/10 border border-yellow-200 dark:border-yellow-800/50 rounded-2xl p-6 shadow-sm">
           <div className="flex items-start gap-4">
@@ -107,14 +150,20 @@ export default function HomePage() {
                 <div
                   key={user.id}
                   onClick={() => router.push(`/users/${user.id}`)}
-                  className="group bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer border border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 overflow-hidden"
+                  className={
+                    "group rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer border border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 overflow-hidden " +
+                    getThemeClass(user.theme)
+                  }
+                  style={getThemeStyle(user.theme)}
                 >
                   {/* Card Header */}
                   <div className="p-6 pb-4">
                     <div className="flex items-start gap-4">
                       <div className="relative">
                         <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg group-hover:scale-110 transition-transform duration-300">
-                          {user.avatar || user.name.charAt(0).toUpperCase()}
+                          {user.avatar && avatarEmojiMap[user.avatar]
+                            ? avatarEmojiMap[user.avatar]
+                            : (user.avatar || user.name.charAt(0).toUpperCase())}
                         </div>
                         <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white dark:border-gray-800"></div>
                       </div>
@@ -128,6 +177,26 @@ export default function HomePage() {
                             <span className="font-medium">{user.deck_count || 0}</span>
                             <span>decks</span>
                           </div>
+                          <div className="flex items-center gap-1.5 text-sm text-purple-600 dark:text-purple-300">
+                            <TrendingUp className="w-4 h-4" />
+                            <span className="font-medium">{user.points ?? 0}</span>
+                            <span>bPoint</span>
+                          </div>
+                        </div>
+
+                        {/* Nút Đổi quà */}
+                        <div className="mt-3">
+                          <Button
+                            size="sm"
+                            className="bg-purple-600 hover:bg-purple-700 text-white text-xs px-3 py-1 rounded-full"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedUser(user);
+                              setShowShop(true);
+                            }}
+                          >
+                            Đổi quà 🎁
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -205,6 +274,20 @@ export default function HomePage() {
       </div>
 
       <UserModal isOpen={showModal} onClose={() => setShowModal(false)} />
+
+      {/* Loyalty Shop Modal */}
+      {showShop && selectedUser && (
+        <LoyaltyShop
+          userId={selectedUser.id}
+          currentPoints={selectedUser.points ?? 0}
+          currentAvatar={selectedUser.avatar || 'default'}
+          currentTheme={selectedUser.theme || 'default'}
+          onClose={() => setShowShop(false)}
+          onUpdate={(_points, _avatar, _theme) => {
+            refetch();
+          }}
+        />
+      )}
     </main>
   );
 }

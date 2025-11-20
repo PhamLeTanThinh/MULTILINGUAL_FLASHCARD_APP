@@ -1,12 +1,5 @@
 export type Language = 'EN' | 'ZH' | 'KO' | 'JA';
 
-export interface User {
-  id: number;
-  name: string;
-  avatar?: string;
-  created_at: string;
-}
-
 export interface Deck {
   id: number;
   name: string;

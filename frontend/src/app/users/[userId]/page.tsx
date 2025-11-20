@@ -44,18 +44,17 @@ export default function UserDecksPage() {
 
   const handleCreateDeck = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validation
+
     if (!deckName.trim()) {
       toast.error('Vui lòng nhập tên bộ flashcard');
       return;
     }
-    
+
     if (deckName.trim().length < 2) {
       toast.error('Tên bộ flashcard phải có ít nhất 2 ký tự');
       return;
     }
-    
+
     if (deckName.trim().length > 100) {
       toast.error('Tên bộ flashcard không được quá 100 ký tự');
       return;
@@ -88,6 +87,88 @@ export default function UserDecksPage() {
     }
   };
 
+  // ===== THEME HELPER (giống homepage) =====
+  const getUserThemeClass = (theme?: string) => {
+    if (theme === 'sakura')
+      return 'bg-gradient-to-br from-pink-50 to-rose-100 dark:from-pink-950/60 dark:to-rose-900/40';
+    if (theme === 'dark')
+      return 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900';
+    if (theme === 'forest')
+      return 'bg-gradient-to-br from-emerald-600 via-emerald-500 to-lime-400';
+    if (theme === 'sunset')
+      return 'bg-gradient-to-br from-orange-500 via-pink-500 to-red-500';
+    if (theme === 'ocean')
+      return 'bg-gradient-to-br from-sky-500 via-cyan-500 to-indigo-500';
+    if (theme === 'neon')
+      return 'bg-gradient-to-br from-fuchsia-500 via-violet-500 to-cyan-400';
+    if (theme === 'terminal')
+      return 'bg-gradient-to-br from-black via-slate-900 to-emerald-500';
+    if (theme === 'cafe')
+      return 'bg-gradient-to-br from-amber-700 via-orange-500 to-stone-400';
+    if (theme === 'default')
+      return 'bg-white dark:bg-gray-800';
+    // custom sẽ dùng inline style, nên chỉ cần nền trong suốt
+    if (theme && theme.startsWith('custom:'))
+      return 'bg-transparent';
+    return 'bg-white dark:bg-gray-800';
+  };
+
+  const parseCustomTheme = (theme?: string) => {
+    if (!theme || !theme.startsWith('custom:')) return null;
+    const raw = theme.slice('custom:'.length);
+    const parts = raw.split(',');
+    if (parts.length < 3) return null;
+    const [from, via, to] = parts;
+    return { from, via, to };
+  };
+
+  const customTheme = parseCustomTheme(user?.theme);
+
+  // ===== AVATAR HELPER (giống homepage) =====
+  const renderUserAvatar = () => {
+    if (!user) return null;
+
+    const avatar = user.avatar;
+    const DEFAULT_EMOJI = '🙂';
+
+    if (avatar) {
+      const looksLikeImage =
+        avatar.startsWith('http') ||
+        avatar.startsWith('/') ||
+        avatar.startsWith('data:');
+
+      if (looksLikeImage) {
+        return (
+          <img
+            src={avatar}
+            alt={user.name}
+            className="w-16 h-16 rounded-2xl object-cover border-2 border-white/60 shadow-md"
+          />
+        );
+      }
+
+      // avatar là key "default" hoặc emoji
+      const display = avatar === 'default' ? DEFAULT_EMOJI : avatar;
+
+      return (
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 flex items-center justify-center shadow-lg">
+          <span className="text-3xl text-white">
+            {display}
+          </span>
+        </div>
+      );
+    }
+
+    // Fallback: chữ cái đầu tên
+    return (
+      <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg">
+        <span className="text-2xl text-white font-bold">
+          {user.name.charAt(0).toUpperCase()}
+        </span>
+      </div>
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -95,6 +176,13 @@ export default function UserDecksPage() {
       </div>
     );
   }
+
+  const headerThemeClass = getUserThemeClass(user?.theme);
+  const headerStyle = customTheme
+    ? {
+        backgroundImage: `linear-gradient(135deg, ${customTheme.from}, ${customTheme.via}, ${customTheme.to})`,
+      }
+    : undefined;
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 p-8 transition-colors">
@@ -110,16 +198,28 @@ export default function UserDecksPage() {
           <ThemeToggle />
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8 transition-colors">
+        {/* HEADER: dùng theme + avatar giống homepage */}
+        <div
+          className={
+            headerThemeClass +
+            ' rounded-3xl shadow-xl p-6 mb-8 transition-colors border border-black/5 dark:border-white/10'
+          }
+          style={headerStyle}
+        >
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-              <span className="text-2xl text-white font-bold">
-                {user?.name.charAt(0).toUpperCase()}
-              </span>
-            </div>
+            {renderUserAvatar()}
             <div>
-              <h1 className="text-3xl font-bold text-foreground">{user?.name}</h1>
-              <p className="text-muted-foreground">{decks?.length || 0} bộ flashcard</p>
+              <h1 className="text-3xl font-bold text-foreground drop-shadow-sm">
+                {user?.name}
+              </h1>
+              <p className="text-sm text-muted-foreground flex items-center gap-3">
+                {(decks?.length || 0) + ' bộ flashcard'}
+                {typeof user?.points === 'number' && (
+                  <span className="inline-flex items-center rounded-full bg-black/10 dark:bg-white/10 px-2.5 py-0.5 text-xs font-semibold text-foreground">
+                    bPoint: {user.points}
+                  </span>
+                )}
+              </p>
             </div>
           </div>
         </div>
@@ -200,7 +300,6 @@ export default function UserDecksPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {decks?.map((deck: Deck) => {
             const language = LANGUAGES.find((l) => l.code === deck.language);
-            // 👇 build link download CSV cho deck này
             const downloadUrl =
               API_BASE && deck.id
                 ? `${API_BASE}/decks/${deck.id}/export-csv`
@@ -248,7 +347,6 @@ export default function UserDecksPage() {
                       Học
                     </Button>
 
-                    {/* 🔽 Nút tải CSV */}
                     {downloadUrl && (
                       <a
                         href={downloadUrl}
