@@ -28,11 +28,15 @@ export default function UserDecksPage() {
   const { data: user } = useQuery({
     queryKey: ['user', userId],
     queryFn: () => userApi.getById(userId).then((res) => res.data),
+    refetchOnWindowFocus: false,
+    refetchInterval: false,
   });
 
   const { data: decks, isLoading, refetch } = useQuery({
     queryKey: ['decks', userId],
     queryFn: () => deckApi.getByUser(userId).then((res) => res.data),
+    refetchOnWindowFocus: false,
+    refetchInterval: false,
   });
 
   const handleCreateDeck = async (e: React.FormEvent) => {

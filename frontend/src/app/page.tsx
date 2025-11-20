@@ -16,7 +16,8 @@ export default function HomePage() {
   const { data: users, isLoading } = useQuery({
     queryKey: ['users'],
     queryFn: () => userApi.getAll().then((res) => res.data),
-    refetchInterval: 60000,
+    refetchOnWindowFocus: false,
+    refetchInterval: false,
   });
 
   const getCountdownColor = (days: number | undefined) => {

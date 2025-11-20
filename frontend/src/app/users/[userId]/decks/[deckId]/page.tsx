@@ -29,11 +29,15 @@ export default function DeckDetailPage() {
   const { data: deck } = useQuery({
     queryKey: ['deck', deckId],
     queryFn: () => deckApi.getById(deckId).then((res) => res.data),
+    refetchOnWindowFocus: false,
+    refetchInterval: false,
   });
 
   const { data: flashcards, refetch } = useQuery({
     queryKey: ['flashcards', deckId],
     queryFn: () => flashcardApi.getByDeck(deckId).then((res) => res.data),
+    refetchOnWindowFocus: false,
+    refetchInterval: false,
   });
 
   const handleCreateCard = async (e: React.FormEvent) => {

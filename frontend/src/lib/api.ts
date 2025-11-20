@@ -89,7 +89,7 @@ export const deckApi = {
   getByUser: (userId: number) => api.get<Deck[]>(`/decks/user/${userId}`),
   getById: (id: number) => api.get<Deck>(`/decks/${id}`),
   create: (data: { name: string; language: string; user_id: number }) => 
-    api.post<Deck>('/decks', data),
+    api.post<Deck>('/decks/', data),
   update: (id: number, data: { name: string }) => 
     api.put<Deck>(`/decks/${id}`, data),
   delete: (id: number) => api.delete(`/decks/${id}`),

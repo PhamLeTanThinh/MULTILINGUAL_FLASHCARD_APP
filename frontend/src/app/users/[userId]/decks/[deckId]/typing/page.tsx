@@ -75,11 +75,15 @@ export default function TypingPracticePage() {
   const { data: deck } = useQuery({
     queryKey: ['deck', deckId],
     queryFn: () => deckApi.getById(deckId).then((res) => res.data),
+    refetchOnWindowFocus: false,
+    refetchInterval: false,
   });
 
   const { data: flashcards } = useQuery({
     queryKey: ['flashcards', deckId],
     queryFn: () => flashcardApi.getByDeck(deckId).then((res) => res.data),
+    refetchOnWindowFocus: false,
+    refetchInterval: false,
   });
 
   useEffect(() => {
