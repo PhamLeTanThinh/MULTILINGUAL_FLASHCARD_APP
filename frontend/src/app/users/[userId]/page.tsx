@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { userApi, deckApi, Deck } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
-import { Plus, BookOpen, ArrowLeft, Trash2 } from 'lucide-react';
+import { Plus, BookOpen, ArrowLeft, Trash2, Download } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
@@ -15,6 +15,9 @@ const LANGUAGES = [
   { code: 'JA', name: 'Tiếng Nhật', flag: '🇯🇵', color: 'from-pink-500 to-rose-500' },
   { code: 'KO', name: 'Tiếng Hàn', flag: '🇰🇷', color: 'from-purple-500 to-indigo-500' },
 ];
+
+// 👇 backend base để build link tải CSV
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
 export default function UserDecksPage() {
   const router = useRouter();
@@ -197,6 +200,15 @@ export default function UserDecksPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {decks?.map((deck: Deck) => {
             const language = LANGUAGES.find((l) => l.code === deck.language);
+            // 👇 build link download CSV cho deck này
+            const downloadUrl =
+              API_BASE && deck.id
+                ? `${API_BASE}/decks/${deck.id}/export-csv`
+                : null;
+                console.log('Download URL:', downloadUrl);
+                console.log('API_BASE:', API_BASE);
+                console.log('deck.id: ', deck.id);
+
             return (
               <div
                 key={deck.id}
@@ -222,7 +234,7 @@ export default function UserDecksPage() {
                     {deck.flashcard_count || 0} thẻ
                   </p>
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     <Button
                       variant="outline"
                       size="sm"
@@ -239,6 +251,27 @@ export default function UserDecksPage() {
                     >
                       Học
                     </Button>
+
+                    {/* 🔽 Nút tải CSV */}
+                    {downloadUrl && (
+                      <a
+                        href={downloadUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1"
+                      >
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                        >
+                          <Download className="w-4 h-4 mr-1" />
+                          CSV
+                        </Button>
+                      </a>
+                    )}
+
                     <Button
                       variant="danger"
                       size="sm"

@@ -1,8 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse   # 👈 thêm dòng này
 from sqlalchemy.orm import Session
 from typing import List
 from .. import crud, schemas
 from ..database import get_db
+import csv
+import io
 
 router = APIRouter(prefix="/decks", tags=["decks"])
 
@@ -35,3 +38,48 @@ def delete_deck(deck_id: int, db: Session = Depends(get_db)):
     if not success:
         raise HTTPException(status_code=404, detail="Deck not found")
     return {"message": "Deck deleted successfully"}
+
+
+# 🚀 NEW: Export CSV cho 1 deck
+@router.get("/{deck_id}/export-csv")
+def export_deck_csv(deck_id: int, db: Session = Depends(get_db)):
+    """
+    Xuất toàn bộ flashcards của 1 deck ra file CSV.
+    Columns: vietnamese, pronunciation, target_language
+    """
+    deck = crud.get_deck(db, deck_id=deck_id)
+    if not deck:
+        raise HTTPException(status_code=404, detail="Deck not found")
+
+    flashcards = crud.get_flashcards_by_deck(db, deck_id)
+
+    def iter_csv():
+        buffer = io.StringIO()
+        writer = csv.writer(buffer)
+
+        # Header
+        writer.writerow(["vietnamese", "pronunciation", "target_language"])
+        yield buffer.getvalue()
+        buffer.seek(0)
+        buffer.truncate(0)
+
+        # Rows
+        for fc in flashcards:
+            writer.writerow([
+                fc.vietnamese or "",
+                fc.pronunciation or "",
+                fc.target_language or "",
+            ])
+            yield buffer.getvalue()
+            buffer.seek(0)
+            buffer.truncate(0)
+
+    filename = f"deck_{deck_id}.csv"
+
+    return StreamingResponse(
+        iter_csv(),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": f'attachment; filename=\"{filename}\"'
+        },
+    )

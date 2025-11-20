@@ -185,3 +185,7 @@ def delete_flashcard(db: Session, flashcard_id: int):
         db.commit()
         return True
     return False
+
+def get_flashcards_by_deck(db: Session, deck_id: int):
+    """Lấy tất cả flashcards của deck"""
+    return db.query(models.Flashcard).filter(models.Flashcard.deck_id == deck_id).all()
