@@ -22,8 +22,7 @@ class Deck(Base):
     language = Column(String(50), nullable=False)  # ← Thêm length limit
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
     created_at = Column(DateTime(timezone=True), server_default=func.now())  # ← Đổi sang func.now()
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())  # ← Đổi sang func.now()
-    
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())  # ← Đổi sang func.now()
     user = relationship("User", back_populates="decks")
     flashcards = relationship("Flashcard", back_populates="deck", cascade="all, delete-orphan")
 
