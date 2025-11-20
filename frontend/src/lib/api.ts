@@ -74,7 +74,7 @@ export interface ExampleResponse {
 
 // User API
 export const userApi = {
-  getAll: () => api.get<User[]>('/users/'),
+  getAll: () => api.get<User[]>('/users'),
   getById: (id: number) => api.get<User>(`/users/${id}`),
   create: (data: { name: string; avatar?: string }) => 
     api.post<User>('/users', data),
