@@ -6,11 +6,18 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Get DATABASE_URL from environment
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./flashcard.db")
 
+# Fix Railway PostgreSQL URL: postgres:// -> postgresql://
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+# Create engine with appropriate config
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {}
+    connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {},
+    pool_pre_ping=True if "postgresql" in DATABASE_URL else False
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

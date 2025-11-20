@@ -1,12 +1,12 @@
-from fastapi import FastAPI, Depends  # ← Thêm Depends
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session  # ← Thêm Session
+from sqlalchemy.orm import Session
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 import os
 
 from .routers import users, decks, flashcards, dictionary, quiz, tts
-from .database import engine, Base, get_db  # ← Thêm get_db
+from .database import engine, Base, get_db, SessionLocal  # ← Thêm SessionLocal
 from .services.cleanup_service import cleanup_inactive_users
 
 
@@ -36,10 +36,19 @@ app.include_router(tts.router, prefix="/api")
 # Setup APScheduler
 scheduler = BackgroundScheduler()
 
+# ← Wrapper function để truyền db session vào cleanup
+def run_scheduled_cleanup():
+    """Wrapper để chạy cleanup với database session"""
+    db = SessionLocal()
+    try:
+        cleanup_inactive_users(db)
+    finally:
+        db.close()
+
 # Chạy cleanup mỗi ngày lúc 3 giờ sáng
 scheduler.add_job(
-    cleanup_inactive_users,
-    CronTrigger(hour=3, minute=0),  # 3:00 AM mỗi ngày
+    run_scheduled_cleanup,  # ← Đổi từ cleanup_inactive_users
+    CronTrigger(hour=3, minute=0),
     id="cleanup_inactive_users",
     name="Delete inactive users (30+ days)",
     replace_existing=True
@@ -68,9 +77,9 @@ def get_cleanup_statistics(db: Session = Depends(get_db)):
     return get_cleanup_stats(db)
 
 @app.post("/api/cleanup/run")
-def run_cleanup_manually():
+def run_cleanup_manually(db: Session = Depends(get_db)):  # ← Thêm db dependency
     """API để chạy cleanup thủ công (cho testing)"""
-    deleted_count = cleanup_inactive_users()
+    deleted_count = cleanup_inactive_users(db)  # ← Truyền db vào
     return {
         "message": "Cleanup completed",
         "deleted_users": deleted_count
