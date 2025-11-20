@@ -8,16 +8,28 @@ class UserBase(BaseModel):
     name: str
     avatar: Optional[str] = None
 
-class UserCreate(UserBase):
-    pass
+    # Loyalty fields (ALWAYS returned)
+    points: int = 0
+    theme: str = "default"
 
-class UserUpdate(UserBase):
-    pass
+
+class UserCreate(BaseModel):
+    name: str
+    avatar: Optional[str] = None
+    # points/theme will use DB defaults
+
+
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    avatar: Optional[str] = None
+
+    # Cho phép đổi theme, KHÔNG cho đổi points
+    theme: Optional[str] = None
+
 
 class User(UserBase):
     id: int
     created_at: datetime
-    # Cho phép None phòng trường hợp record cũ hoặc lỗi data
     last_activity_at: Optional[datetime] = None
     days_until_deletion: Optional[int] = None
     deck_count: Optional[int] = None
@@ -42,7 +54,6 @@ class Deck(DeckBase):
     id: int
     user_id: int
     created_at: datetime
-    # ❗ Quan trọng: updated_at có thể là None (vì mới tạo)
     updated_at: Optional[datetime] = None
     flashcard_count: Optional[int] = 0
 
@@ -60,8 +71,12 @@ class FlashcardBase(BaseModel):
 class FlashcardCreate(FlashcardBase):
     deck_id: int
 
-class FlashcardUpdate(FlashcardBase):
-    pass
+
+class FlashcardUpdate(BaseModel):
+    vietnamese: Optional[str] = None
+    pronunciation: Optional[str] = None
+    target_language: Optional[str] = None
+
 
 class Flashcard(FlashcardBase):
     id: int

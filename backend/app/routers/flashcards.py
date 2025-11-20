@@ -3,13 +3,27 @@ from sqlalchemy.orm import Session
 from typing import List
 import csv
 import io
-from .. import crud, schemas
+from .. import crud, schemas, models
 from ..database import get_db
 from ..services.pronunciation import generate_pronunciation
 from ..services.ai_example_generator import generate_example_sentences, generate_dialogue
 
 
 router = APIRouter(prefix="/flashcards", tags=["flashcards"])
+
+# Loyalty system
+FLASHCARD_POINT_VALUE = 5
+
+
+def add_points(db: Session, user: models.User, amount: int):
+    """Safely add loyalty points to user"""
+    if not user:
+        return
+    user.points = (user.points or 0) + amount
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
 
 @router.get("/deck/{deck_id}", response_model=List[schemas.Flashcard])
 def read_deck_flashcards(deck_id: int, db: Session = Depends(get_db)):
@@ -31,7 +45,18 @@ def create_flashcard(flashcard: schemas.FlashcardCreate, db: Session = Depends(g
             flashcard.target_language, 
             deck.language
         )
-    return crud.create_flashcard(db=db, flashcard=flashcard)
+
+    created_fc = crud.create_flashcard(db=db, flashcard=flashcard)
+
+    # Loyalty: +5 points
+    try:
+        deck = crud.get_deck(db, flashcard.deck_id)
+        user = deck.user
+        add_points(db, user, FLASHCARD_POINT_VALUE)
+    except Exception as e:
+        print("Failed to add loyalty points:", e)
+
+    return created_fc
 
 @router.post("/bulk", status_code=201)
 def create_flashcards_bulk(request: schemas.BulkImportRequest, db: Session = Depends(get_db)):
@@ -57,6 +82,14 @@ def create_flashcards_bulk(request: schemas.BulkImportRequest, db: Session = Dep
         )
     
     created = crud.create_flashcards_bulk(db, flashcards_to_create)
+
+    # Loyalty: +5 * n flashcards
+    try:
+        user = deck.user
+        add_points(db, user, len(created) * FLASHCARD_POINT_VALUE)
+    except Exception as e:
+        print("Failed to add loyalty points:", e)
+
     return {"message": f"Created {len(created)} flashcards", "count": len(created)}
 
 @router.post("/upload-csv/{deck_id}")
@@ -119,6 +152,13 @@ async def upload_csv(deck_id: int, file: UploadFile = File(...), db: Session = D
             )
         
         created = crud.create_flashcards_bulk(db, flashcards)
+
+        # Loyalty: +5 * n flashcards
+        try:
+            user = deck.user
+            add_points(db, user, len(created) * FLASHCARD_POINT_VALUE)
+        except Exception as e:
+            print("Failed to add loyalty points:", e)
         
         response = {
             "message": f"Imported {len(created)} flashcards",
