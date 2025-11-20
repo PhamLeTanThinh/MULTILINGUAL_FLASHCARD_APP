@@ -6,26 +6,39 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Get DATABASE_URL from environment
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./flashcard.db")
+# =====================================
+# CHỈ DÙNG POSTGRES TRÊN RAILWAY
+# =====================================
 
-# Fix Railway PostgreSQL URL: postgres:// -> postgresql://
+# Railway thường set:
+# - DATABASE_URL           (internal: postgres.railway.internal)
+# - DATABASE_PUBLIC_URL    (public: mainline.proxy.rlwy.net)
+DATABASE_URL = os.getenv("DATABASE_URL") or os.getenv("DATABASE_PUBLIC_URL")
+
+if not DATABASE_URL or DATABASE_URL.strip() == "":
+    # Không fallback sqlite nữa – bắt buộc phải cấu hình Postgres
+    raise RuntimeError(
+        "❌ DATABASE_URL không được thiết lập. "
+        "Hãy vào Railway → service backend → Variables và set DATABASE_URL hoặc DATABASE_PUBLIC_URL."
+    )
+
+# Fix trường hợp URL dạng postgres:// → postgresql:// cho SQLAlchemy
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-# Create engine with appropriate config
+# Tạo engine cho PostgreSQL
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {},
-    pool_pre_ping=True if "postgresql" in DATABASE_URL else False
+    pool_pre_ping=True,  # tự ping connection, tránh timeout trên Railway
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
+
 def get_db():
-    """Database session dependency"""
+    """Dependency lấy session DB (dùng cho FastAPI / Flask)"""
     db = SessionLocal()
     try:
         yield db
