@@ -7,7 +7,6 @@ export const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  maxRedirects: 0,
   validateStatus: (status) => status >= 200 && status < 400
 });
 
@@ -75,7 +74,7 @@ export interface ExampleResponse {
 
 // User API
 export const userApi = {
-  getAll: () => api.get<User[]>('/users'),
+  getAll: () => api.get<User[]>('/users/'),
   getById: (id: number) => api.get<User>(`/users/${id}`),
   create: (data: { name: string; avatar?: string }) => 
     api.post<User>('/users', data),
@@ -105,7 +104,7 @@ export const flashcardApi = {
     vietnamese: string;
     pronunciation?: string;
     target_language: string;
-  }) => api.post<Flashcard>('/flashcards', data),
+  }) => api.post<Flashcard>('/flashcards/', data),
   bulkCreate: (data: {
     deck_id: number;
     flashcards: Array<{

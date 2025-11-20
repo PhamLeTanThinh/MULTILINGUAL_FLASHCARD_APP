@@ -9,7 +9,7 @@ from ..services.pronunciation import generate_pronunciation
 from ..services.ai_example_generator import generate_example_sentences, generate_dialogue
 
 
-router = APIRouter(prefix="/flashcards", tags=["flashcards"])
+router = APIRouter(prefix="/flashcards/", tags=["flashcards"])
 
 @router.get("/deck/{deck_id}", response_model=List[schemas.Flashcard])
 def read_deck_flashcards(deck_id: int, db: Session = Depends(get_db)):
