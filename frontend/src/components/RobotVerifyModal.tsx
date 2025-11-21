@@ -103,7 +103,7 @@ export function RobotVerifyModal() {
               value={answer}
               onChange={(e) => setAnswer(e.target.value)}
               className="w-full rounded-xl bg-slate-800 border border-slate-700 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-pink-500"
-              placeholder="Nhập đáp án (spoiler: lúc nào cũng sai 🤫)"
+              placeholder="Nhập đáp án"
             />
 
             {error && (
