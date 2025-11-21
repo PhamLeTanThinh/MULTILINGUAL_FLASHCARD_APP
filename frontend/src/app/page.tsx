@@ -9,6 +9,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { useState } from 'react';
 import { UserModal } from '@/components/UserModal';
 import LoyaltyShop from '@/components/LoyaltyShop';
+import { HandwritingHello } from '@/components/HandwritingHello';
 
 export default function HomePage() {
   const router = useRouter();
@@ -53,6 +54,12 @@ export default function HomePage() {
     if (key === 'sakura') return 'bg-pink-50 dark:bg-pink-950/40';
     if (key === 'dark') return 'bg-gray-900/90';
     if (key === 'forest') return 'bg-emerald-50 dark:bg-emerald-950/40';
+    if (key === 'sunset')
+      return 'bg-gradient-to-br from-orange-300 via-pink-400 to-rose-400 dark:from-orange-700 dark:via-pink-800 dark:to-rose-800';
+    if (key === 'ocean')
+      return 'bg-gradient-to-br from-blue-300 via-sky-300 to-cyan-300 dark:from-blue-800 dark:via-sky-900 dark:to-cyan-900';
+    if (key === 'neon')
+      return 'bg-gradient-to-br from-fuchsia-400 via-purple-400 to-sky-400 dark:from-fuchsia-800 dark:via-purple-800 dark:to-sky-800';
     if (key === 'custom') return 'bg-white/90 dark:bg-gray-900/80';
     return 'bg-white dark:bg-gray-800';
   };
@@ -74,16 +81,72 @@ export default function HomePage() {
     }
   };
 
+  // Avatar pastel map từ theme (nhạt hơn)
+  const getAvatarGradientClass = (theme: string | undefined) => {
+    const key = theme?.startsWith("custom:") ? "custom" : theme;
+
+    if (key === "sakura")
+      return "from-pink-200 via-rose-200 to-amber-200";
+
+    if (key === "forest")
+      return "from-emerald-200 via-emerald-100 to-lime-200";
+
+    if (key === "dark")
+      return "from-slate-300 via-indigo-300 to-purple-300";
+
+    if (key === "sunset")
+      return "from-orange-100 via-pink-100 to-rose-100";
+
+    if (key === "ocean")
+      return "from-blue-100 via-sky-100 to-cyan-100";
+
+    if (key === "neon")
+      return "from-fuchsia-200 via-purple-200 to-sky-200";
+
+
+    if (key === "custom") return "";
+
+    // default
+    return "from-blue-100 via-indigo-100 to-purple-100";
+  };
+
+  // Avatar pastel cho theme custom
+  const getAvatarStyle = (theme: string | undefined) => {
+    if (!theme || !theme.startsWith("custom:")) return undefined;
+
+    try {
+      const raw = theme.slice("custom:".length);
+      const parts = raw.split(",");
+
+      const from = parts[0] || "#4f46e5";
+      const via = parts[1] || from;
+      const to = parts[2] || via;
+
+      return {
+        backgroundImage: `
+        linear-gradient(to bottom right,
+          rgba(255,255,255,0.60),
+          rgba(255,255,255,0.60)
+        ),
+        linear-gradient(to bottom right, ${from}, ${via}, ${to})
+      `,
+      } as React.CSSProperties;
+    } catch {
+      return undefined;
+    }
+  };
+
+
   const avatarEmojiMap: Record<string, string> = {
-    default: "🙂",
-    cat: "😼",
-    panda: "🐼",
-    dragon: "🐉",
-    fox: "🦊",
-    robot: "🤖",
-    unicorn: "🦄",
-    alien: "👽",
-    ghost: "👻",
+    default: '🙂',
+    cat: '😼',
+    panda: '🐼',
+    dragon: '🐉',
+    fox: '🦊',
+    robot: '🤖',
+    unicorn: '🦄',
+    alien: '👽',
+    ghost: '👻',
   };
 
   return (
@@ -91,27 +154,40 @@ export default function HomePage() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-12">
         {/* Header Section - Centered */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-5">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 mb-6 shadow-2xl shadow-blue-500/30">
             <BookOpen className="w-10 h-10 text-white" />
           </div>
-          <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-3 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+          <h1
+            className="
+              text-5xl font-bold mb-3 
+              bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 
+              bg-clip-text text-transparent
+              leading-tight
+              pb-1
+            "
+          >
             Multilingual Flashcard
           </h1>
+
           <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
             Nhỏ không học, lớn giống thằng làm app này!
           </p>
           <div className="flex items-center justify-center gap-3">
             <ThemeToggle />
-            <Button 
-              onClick={() => setShowModal(true)} 
+            <Button
+              onClick={() => setShowModal(true)}
               size="lg"
               className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all"
             >
               <Plus className="w-5 h-5 mr-2" />
-              Thêm User
+              Thêm người dùng
             </Button>
           </div>
+        </div>
+
+        <div className="flex flex-col items-center">
+          <HandwritingHello />
         </div>
 
         {/* Warning Banner */}
@@ -125,8 +201,9 @@ export default function HomePage() {
                 Chính sách xóa dữ liệu tự động
               </h3>
               <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                Tài khoản không hoạt động quá <strong className="font-bold text-yellow-700 dark:text-yellow-400">30 ngày</strong> sẽ bị xóa tự động cùng toàn bộ dữ liệu. 
-                Đăng nhập định kỳ để giữ tài khoản của bạn an toàn.
+                Tài khoản không hoạt động quá{' '}
+                <strong className="font-bold text-yellow-700 dark:text-yellow-400">30 ngày</strong> sẽ bị xóa tự
+                động cùng toàn bộ dữ liệu. Giống như trí nhớ của bạn vậy đó 😉!
               </p>
             </div>
           </div>
@@ -145,106 +222,132 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {users.map((user) => {
               const progressPercentage = user.days_until_deletion ? (user.days_until_deletion / 30) * 100 : 0;
-              
+
               return (
                 <div
                   key={user.id}
                   onClick={() => router.push(`/users/${user.id}`)}
                   className={
-                    "group rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer border border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 overflow-hidden " +
+                    "relative group rounded-2xl cursor-pointer overflow-hidden " +
+                    "border border-white/20 shadow-lg hover:shadow-2xl transition-all duration-300 " +
                     getThemeClass(user.theme)
                   }
                   style={getThemeStyle(user.theme)}
                 >
-                  {/* Card Header */}
-                  <div className="p-6 pb-4">
-                    <div className="flex items-start gap-4">
-                      <div className="relative">
-                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg group-hover:scale-110 transition-transform duration-300">
-                          {user.avatar && avatarEmojiMap[user.avatar]
-                            ? avatarEmojiMap[user.avatar]
-                            : (user.avatar || user.name.charAt(0).toUpperCase())}
-                        </div>
-                        <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white dark:border-gray-800"></div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                          {user.name}
-                        </h3>
-                        <div className="flex items-center gap-4 mt-1">
-                          <div className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
-                            <BookOpen className="w-4 h-4" />
-                            <span className="font-medium">{user.deck_count || 0}</span>
-                            <span>decks</span>
+                  {/* CONTENT */}
+                  <div className="relative z-10">
+                    {/* Card Header */}
+                    <div className="p-6 pb-4">
+                      <div className="flex items-start gap-4">
+                        <div className="relative">
+                          <div
+                            className={
+                              "w-16 h-16 rounded-2xl bg-gradient-to-br flex items-center justify-center text-white text-2xl font-bold shadow-lg group-hover:scale-110 transition-transform duration-300 " +
+                              getAvatarGradientClass(user.theme)
+                            }
+                            style={getAvatarStyle(user.theme)}
+                          >
+                            {user.avatar && avatarEmojiMap[user.avatar]
+                              ? avatarEmojiMap[user.avatar]
+                              : user.avatar || user.name.charAt(0).toUpperCase()}
                           </div>
-                          <div className="flex items-center gap-1.5 text-sm text-purple-600 dark:text-purple-300">
-                            <TrendingUp className="w-4 h-4" />
-                            <span className="font-medium">{user.points ?? 0}</span>
-                            <span>bPoint</span>
-                          </div>
+                          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white dark:border-gray-800"></div>
                         </div>
 
-                        {/* Nút Đổi quà */}
-                        <div className="mt-3">
-                          <Button
-                            size="sm"
-                            className="bg-purple-600 hover:bg-purple-700 text-white text-xs px-3 py-1 rounded-full"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedUser(user);
-                              setShowShop(true);
-                            }}
-                          >
-                            Đổi quà 🎁
-                          </Button>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                            {user.name}
+                          </h3>
+
+                          <div className="flex items-center gap-4 mt-1">
+                            <div className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
+                              <BookOpen className="w-4 h-4" />
+                              <span className="font-medium">{user.deck_count || 0}</span>
+                              <span>decks</span>
+                            </div>
+
+                            <div className="flex items-center gap-1.5 text-sm text-purple-600 dark:text-purple-300">
+                              <TrendingUp className="w-4 h-4" />
+                              <span className="font-medium">{user.points ?? 0}</span>
+                              <span>bPoint</span>
+                            </div>
+                          </div>
+
+                          {/* Nút đổi quà */}
+                          <div className="mt-3">
+                            <Button
+                              size="sm"
+                              className="bg-purple-600 hover:bg-purple-700 text-white text-xs px-3 py-1 rounded-full"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedUser(user);
+                                setShowShop(true);
+                              }}
+                            >
+                              Đổi quà 🎁
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Countdown Section */}
-                  <div className="px-6 pb-6">
-                    <div className={`rounded-xl p-4 ${getCountdownBadge(user.days_until_deletion)} transition-all duration-300`}>
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <Clock className={`w-4 h-4 ${getCountdownColor(user.days_until_deletion)}`} />
-                          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-                            Thời gian còn lại
+                    {/* Countdown Section */}
+                    <div className="px-6 pb-6">
+                      <div
+                        className={`rounded-xl p-4 ${getCountdownBadge(
+                          user.days_until_deletion
+                        )} transition-all duration-300`}
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <Clock
+                              className={`w-4 h-4 ${getCountdownColor(
+                                user.days_until_deletion
+                              )}`}
+                            />
+                            <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+                              Thời gian còn lại
+                            </span>
+                          </div>
+                          <span
+                            className={`text-2xl font-bold ${getCountdownColor(
+                              user.days_until_deletion
+                            )}`}
+                          >
+                            {user.days_until_deletion !== undefined
+                              ? `${user.days_until_deletion}d`
+                              : "---"}
                           </span>
                         </div>
-                        <span className={`text-2xl font-bold ${getCountdownColor(user.days_until_deletion)}`}>
-                          {user.days_until_deletion !== undefined 
-                            ? `${user.days_until_deletion}d` 
-                            : '---'}
-                        </span>
-                      </div>
-                      
-                      {/* Progress Bar */}
-                      <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full ${getProgressColor(user.days_until_deletion)} transition-all duration-500 rounded-full`}
-                          style={{ width: `${Math.max(5, progressPercentage)}%` }}
-                        />
+
+                        {/* Progress */}
+                        <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full ${getProgressColor(
+                              user.days_until_deletion
+                            )} transition-all duration-500 rounded-full`}
+                            style={{ width: `${Math.max(5, progressPercentage)}%` }}
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Footer */}
-                  <div className="px-6 py-4 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-700">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-500 dark:text-gray-400">
-                        Hoạt động cuối
-                      </span>
-                      <span className="font-medium text-gray-700 dark:text-gray-300">
-                        {new Date(user.last_activity_at).toLocaleDateString('vi-VN', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric'
-                        })}
-                      </span>
+                    {/* Footer */}
+                    <div className="px-6 py-4 bg-gray-50/50 dark:bg-gray-900/40 border-t border-white/20 dark:border-gray-700">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-gray-600 dark:text-gray-400">Hoạt động cuối</span>
+                        <span className="font-medium text-gray-700 dark:text-gray-300">
+                          {new Date(user.last_activity_at).toLocaleDateString("vi-VN", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                          })}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
+
               );
             })}
           </div>
@@ -254,14 +357,12 @@ export default function HomePage() {
               <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20 flex items-center justify-center">
                 <User className="w-10 h-10 text-blue-600 dark:text-blue-400" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
-                Chưa có người dùng
-              </h3>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">Chưa có người dùng</h3>
               <p className="text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">
                 Tạo người dùng đầu tiên để bắt đầu hành trình học tập của bạn
               </p>
-              <Button 
-                onClick={() => setShowModal(true)} 
+              <Button
+                onClick={() => setShowModal(true)}
                 size="lg"
                 className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg"
               >

@@ -87,29 +87,40 @@ export default function UserDecksPage() {
     }
   };
 
-  // ===== THEME HELPER (giống homepage) =====
+  // ===== THEME HELPER (giống homepage, theme đậm) =====
   const getUserThemeClass = (theme?: string) => {
-    if (theme === 'sakura')
-      return 'bg-gradient-to-br from-pink-50 to-rose-100 dark:from-pink-950/60 dark:to-rose-900/40';
-    if (theme === 'dark')
-      return 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900';
-    if (theme === 'forest')
-      return 'bg-gradient-to-br from-emerald-600 via-emerald-500 to-lime-400';
-    if (theme === 'sunset')
-      return 'bg-gradient-to-br from-orange-500 via-pink-500 to-red-500';
-    if (theme === 'ocean')
-      return 'bg-gradient-to-br from-sky-500 via-cyan-500 to-indigo-500';
-    if (theme === 'neon')
-      return 'bg-gradient-to-br from-fuchsia-500 via-violet-500 to-cyan-400';
-    if (theme === 'terminal')
+    if (!theme) return 'bg-white dark:bg-gray-800';
+
+    const key = theme.startsWith('custom:') ? 'custom' : theme;
+
+    if (key === 'sakura')
+      return 'bg-gradient-to-br from-pink-300 via-rose-400 to-amber-300 dark:from-pink-700 dark:via-rose-800 dark:to-amber-800';
+
+    if (key === 'forest')
+      return 'bg-gradient-to-br from-emerald-400 via-emerald-500 to-lime-400 dark:from-emerald-700 dark:via-emerald-800 dark:to-lime-700';
+
+    if (key === 'sunset')
+      return 'bg-gradient-to-br from-orange-400 via-pink-500 to-rose-500 dark:from-orange-700 dark:via-pink-700 dark:to-rose-800';
+
+    if (key === 'ocean')
+      return 'bg-gradient-to-br from-sky-400 via-cyan-500 to-indigo-500 dark:from-sky-700 dark:via-cyan-700 dark:to-indigo-800';
+
+    if (key === 'neon')
+      return 'bg-gradient-to-br from-fuchsia-500 via-violet-500 to-cyan-400 dark:from-fuchsia-700 dark:via-violet-700 dark:to-cyan-600';
+
+    if (key === 'terminal')
       return 'bg-gradient-to-br from-black via-slate-900 to-emerald-500';
-    if (theme === 'cafe')
-      return 'bg-gradient-to-br from-amber-700 via-orange-500 to-stone-400';
-    if (theme === 'default')
-      return 'bg-white dark:bg-gray-800';
-    // custom sẽ dùng inline style, nên chỉ cần nền trong suốt
-    if (theme && theme.startsWith('custom:'))
+
+    if (key === 'cafe')
+      return 'bg-gradient-to-br from-amber-700 via-orange-500 to-stone-500 dark:from-amber-800 dark:via-orange-700 dark:to-stone-600';
+
+    if (key === 'dark')
+      return 'bg-gradient-to-br from-slate-900 via-slate-800 to-black';
+
+    if (key === 'custom')
       return 'bg-transparent';
+
+    // default / classic
     return 'bg-white dark:bg-gray-800';
   };
 
@@ -124,13 +135,63 @@ export default function UserDecksPage() {
 
   const customTheme = parseCustomTheme(user?.theme);
 
-  // ===== AVATAR HELPER (giống homepage) =====
+  // ===== AVATAR HELPER (avatar nhạt hơn theme) =====
+  const getAvatarBgClass = (theme?: string) => {
+    if (!theme) return 'from-blue-100 via-indigo-100 to-purple-100';
+
+    const key = theme.startsWith('custom:') ? 'custom' : theme;
+
+    if (key === 'sakura')
+      return 'from-pink-100 via-rose-100 to-amber-100';
+
+    if (key === 'forest')
+      return 'from-emerald-100 via-emerald-50 to-lime-100';
+
+    if (key === 'sunset')
+      return 'from-orange-100 via-pink-100 to-rose-100';
+
+    if (key === 'ocean')
+      return 'from-sky-100 via-cyan-100 to-indigo-100';
+
+    if (key === 'neon')
+      return 'from-fuchsia-100 via-purple-100 to-sky-100';
+
+    if (key === 'terminal')
+      return 'from-emerald-200 via-slate-300 to-slate-500';
+
+    if (key === 'cafe')
+      return 'from-amber-100 via-orange-100 to-stone-100';
+
+    if (key === 'dark')
+      return 'from-slate-200 via-slate-100 to-slate-300';
+
+    if (key === 'custom') return '';
+
+    // default
+    return 'from-blue-100 via-indigo-100 to-purple-100';
+  };
+
+  const getAvatarBgStyle = (theme?: string) => {
+    const parsed = parseCustomTheme(theme);
+    if (!parsed) return undefined;
+
+    const { from, via, to } = parsed;
+    return {
+      backgroundImage: `
+        linear-gradient(to bottom right, rgba(255,255,255,0.55), rgba(255,255,255,0.55)),
+        linear-gradient(to bottom right, ${from}, ${via}, ${to})
+      `,
+    } as any;
+  };
+
+  // ===== AVATAR RENDER =====
   const renderUserAvatar = () => {
     if (!user) return null;
 
     const avatar = user.avatar;
     const DEFAULT_EMOJI = '🙂';
 
+    // avatar là URL hình
     if (avatar) {
       const looksLikeImage =
         avatar.startsWith('http') ||
@@ -151,7 +212,13 @@ export default function UserDecksPage() {
       const display = avatar === 'default' ? DEFAULT_EMOJI : avatar;
 
       return (
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 flex items-center justify-center shadow-lg">
+        <div
+          className={
+            'w-16 h-16 rounded-2xl bg-gradient-to-br flex items-center justify-center shadow-lg ' +
+            getAvatarBgClass(user.theme)
+          }
+          style={getAvatarBgStyle(user.theme)}
+        >
           <span className="text-3xl text-white">
             {display}
           </span>
@@ -161,7 +228,13 @@ export default function UserDecksPage() {
 
     // Fallback: chữ cái đầu tên
     return (
-      <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg">
+      <div
+        className={
+          'w-16 h-16 rounded-2xl bg-gradient-to-br flex items-center justify-center shadow-lg ' +
+          getAvatarBgClass(user?.theme)
+        }
+        style={getAvatarBgStyle(user?.theme)}
+      >
         <span className="text-2xl text-white font-bold">
           {user.name.charAt(0).toUpperCase()}
         </span>

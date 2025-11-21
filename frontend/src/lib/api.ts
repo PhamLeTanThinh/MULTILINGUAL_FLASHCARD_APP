@@ -138,11 +138,22 @@ export const flashcardApi = {
 
 // Dictionary API
 export const dictionaryApi = {
-  search: (query: string, language: string, limit: number = 10) =>
+  search: (
+    query: string,
+    language: string,
+    kanjiOnly: boolean = false,
+    limit: number = 10
+  ) =>
     api.get<DictionaryResult[]>('/dictionary/search', {
-      params: { query, language, limit },
+      params: {
+        query,
+        language,
+        limit,
+        kanji_only: kanjiOnly, // <-- thêm dòng này
+      },
     }),
 };
+
 
 // Quiz API
 export const quizApi = {

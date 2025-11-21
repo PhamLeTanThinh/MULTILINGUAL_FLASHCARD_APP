@@ -362,7 +362,7 @@ export default function QuizPage() {
             </h2>
             
             <p className="text-center text-muted-foreground mb-8 text-lg italic">
-              "Đợi chờ là hạnh phúc" ✨
+              "Cố lenh cố lenh, sắp tới rồi sắp tới rồi" ✨
             </p>
 
             <div className="text-center mb-4">
@@ -393,7 +393,7 @@ export default function QuizPage() {
                 <span className="inline-block w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
               </div>
               <p className="text-xs text-muted-foreground">
-                AI đang suy nghĩ cật lực để tạo câu hỏi hay cho bạn...
+                AI đang vắt kiệt sinh lực để tạo câu hỏi thật wow cho bạn...
               </p>
             </div>
           </div>

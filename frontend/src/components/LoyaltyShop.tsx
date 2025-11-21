@@ -69,7 +69,7 @@ export default function LoyaltyShop({
           if (parts[2]) setCustomTo(parts[2]);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [userId]);
 
   // ===== Avatar meta: icon + fancy label =====
@@ -86,11 +86,11 @@ export default function LoyaltyShop({
   };
 
   const EMOJI_CHOICES = [
-    "🙂","😊","💩","😈","👻","💀","👽","🤖",
-    "🐱","🐶","🐻","🐰","🦊","🐯","🦁","🐸","🐵","🐷",
-    "🐺","🦄","🐲","🐉","🐙","🦋","🐝","🐧","🐼",
-    "🍀","🌸","🌻","🐣","🌙","⭐","⚡","🔥","❄️","💧",
-    "🐛","🦍","🦥","🐢","🦩","🐳","🪼","🐙","🦭","🐊",
+    "🙂", "😊", "💩", "😈", "👻", "💀", "👽", "🤖",
+    "🐱", "🐶", "🐻", "🐰", "🦊", "🐯", "🦁", "🐸", "🐵", "🐷",
+    "🐺", "🦄", "🐲", "🐉", "🐙", "🦋", "🐝", "🐧", "🐼",
+    "🍀", "🌸", "🌻", "🐣", "🌙", "⭐", "⚡", "🔥", "❄️", "💧",
+    "🐛", "🦍", "🦥", "🐢", "🦩", "🐳", "🪼", "🐙", "🦭", "🐊",
   ];
 
   const handleConfirmCustomAvatar = async () => {
@@ -252,10 +252,10 @@ export default function LoyaltyShop({
         <div className="flex justify-between items-center mb-4">
           <div>
             <h2 className="font-semibold text-lg flex items-center gap-2">
-              🎁 Loyalty Shop
+              🎁 Shoppinggggggg
             </h2>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Tích điểm từ flashcard để nâng cấp profile của bạn
+              Học thì ngu chứ mấy cái này nhanh lắm !!!
             </p>
           </div>
           <button
@@ -276,10 +276,6 @@ export default function LoyaltyShop({
               {points}
             </div>
           </div>
-          <div className="text-xs text-gray-400 text-right">
-            Chọn avatar / theme để xem trước. <br />
-            Chỉ khi bấm nút đổi mới trừ điểm.
-          </div>
         </div>
 
         {/* 2 CỘT: Trái = Avatar, Phải = Theme */}
@@ -290,9 +286,7 @@ export default function LoyaltyShop({
             <div>
               <div className="font-semibold mb-2 flex items-center justify-between">
                 <span>Avatar</span>
-                <span className="text-[11px] text-gray-400">
-                  Icon sẽ hiển thị trên thẻ user
-                </span>
+
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {Object.entries(avatars).map(([key, cost]) => {
@@ -310,10 +304,9 @@ export default function LoyaltyShop({
                       onClick={() => setSelectedAvatar(key)}
                       className={`relative border rounded-xl p-2 flex flex-col items-center justify-between h-24 text-xs
                         ${getAvatarCardStyle(key)}
-                        ${
-                          isSelected
-                            ? "ring-2 ring-blue-500 ring-offset-2 ring-offset-white dark:ring-offset-neutral-900"
-                            : "border-gray-200/70 dark:border-neutral-700"
+                        ${isSelected
+                          ? "ring-2 ring-blue-500 ring-offset-2 ring-offset-white dark:ring-offset-neutral-900"
+                          : "border-gray-200/70 dark:border-neutral-700"
                         }
                         ${notEnough ? "opacity-60" : ""}`}
                     >
@@ -340,11 +333,7 @@ export default function LoyaltyShop({
               <div className="flex items-center justify-between mb-3">
                 <div>
                   <div className="font-semibold flex items-center gap-2">
-                    😜 Custom emoji avatar
-                  </div>
-                  <div className="text-[11px] text-gray-500 dark:text-gray-400">
-                    Chọn emoji bất kỳ để làm avatar, không bị giới hạn bởi danh
-                    sách có sẵn.
+                    😜 Custom Avatar
                   </div>
                 </div>
                 <div className="text-xs font-semibold text-purple-700 dark:text-purple-300">
@@ -355,7 +344,6 @@ export default function LoyaltyShop({
               <div className="flex items-start gap-4 mb-3">
                 {/* Emoji grid */}
                 <div className="flex-1">
-                  <div className="text-[11px] text-gray-500 mb-1">Emoji</div>
                   <div className="mt-1 max-h-32 overflow-y-auto bg-white dark:bg-neutral-900 border border-purple-100 dark:border-purple-700 rounded-xl p-2">
                     <div className="grid grid-cols-8 sm:grid-cols-10 gap-2">
                       {EMOJI_CHOICES.map((e) => {
@@ -378,9 +366,6 @@ export default function LoyaltyShop({
                       })}
                     </div>
                   </div>
-                  <div className="mt-1 text-[10px] text-gray-400">
-                    Kéo để xem thêm emoji.
-                  </div>
                 </div>
 
                 {/* Preview */}
@@ -396,11 +381,10 @@ export default function LoyaltyShop({
                 type="button"
                 onClick={handleConfirmCustomAvatar}
                 disabled={loadingCustomAvatar || points < CUSTOM_AVATAR_COST}
-                className={`px-4 py-2 rounded text-xs font-semibold ${
-                  loadingCustomAvatar || points < CUSTOM_AVATAR_COST
-                    ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                    : "bg-purple-600 text-white hover:bg-purple-700"
-                }`}
+                className={`px-4 py-2 rounded text-xs font-semibold ${loadingCustomAvatar || points < CUSTOM_AVATAR_COST
+                  ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                  : "bg-purple-600 text-white hover:bg-purple-700"
+                  }`}
               >
                 {loadingCustomAvatar ? "Đang đổi..." : "Đổi avatar custom"}
               </button>
@@ -419,9 +403,6 @@ export default function LoyaltyShop({
             <div>
               <div className="font-semibold mb-2 flex items-center justify-between">
                 <span>Theme</span>
-                <span className="text-[11px] text-gray-400">
-                  Nền thẻ user trên homepage
-                </span>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {Object.entries(themes).map(([key, cost]) => {
@@ -434,10 +415,9 @@ export default function LoyaltyShop({
                       type="button"
                       onClick={() => setSelectedTheme(key)}
                       className={`relative border rounded-xl p-2 flex flex-col items-start gap-2 h-24
-                        ${
-                          isSelected
-                            ? "border-emerald-500 ring-2 ring-emerald-500/60"
-                            : "border-gray-200 dark:border-neutral-700"
+                        ${isSelected
+                          ? "border-emerald-500 ring-2 ring-emerald-500/60"
+                          : "border-gray-200 dark:border-neutral-700"
                         }
                         ${notEnough ? "opacity-60" : ""}`}
                     >
@@ -468,10 +448,10 @@ export default function LoyaltyShop({
               <div className="flex items-center justify-between mb-3">
                 <div>
                   <div className="font-semibold flex items-center gap-2">
-                    🎨 Custom theme (Color picker)
+                    🎨 Custom theme
                   </div>
                   <div className="text-[11px] text-gray-500 dark:text-gray-400">
-                    Tự mix 3 màu gradient riêng, lưu lại như skin cá nhân.
+                    7 sắc cầu vòng mỗi ngày một màu
                   </div>
                 </div>
                 <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
@@ -532,11 +512,10 @@ export default function LoyaltyShop({
                   type="button"
                   onClick={handleConfirmCustomTheme}
                   disabled={loadingCustomTheme || points < CUSTOM_THEME_COST}
-                  className={`px-4 py-2 rounded text-xs font-semibold whitespace-nowrap ${
-                    loadingCustomTheme || points < CUSTOM_THEME_COST
-                      ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                      : "bg-emerald-600 text-white hover:bg-emerald-700"
-                  }`}
+                  className={`px-4 py-2 rounded text-xs font-semibold whitespace-nowrap ${loadingCustomTheme || points < CUSTOM_THEME_COST
+                    ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                    : "bg-emerald-600 text-white hover:bg-emerald-700"
+                    }`}
                 >
                   {loadingCustomTheme ? "Đang đổi..." : "Đổi theme custom"}
                 </button>
@@ -611,14 +590,13 @@ export default function LoyaltyShop({
                 selectedAvatarCost <= 0 ||
                 points < selectedAvatarCost
               }
-              className={`px-3 py-1 rounded text-xs ${
-                loadingAvatar ||
+              className={`px-3 py-1 rounded text-xs ${loadingAvatar ||
                 selectedAvatar === avatar ||
                 selectedAvatarCost <= 0 ||
                 points < selectedAvatarCost
-                  ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                  : "bg-blue-600 text-white hover:bg-blue-700"
-              }`}
+                ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                : "bg-blue-600 text-white hover:bg-blue-700"
+                }`}
             >
               {loadingAvatar ? "Đang đổi..." : "Đổi avatar"}
             </button>
@@ -632,14 +610,13 @@ export default function LoyaltyShop({
                 selectedThemeCost <= 0 ||
                 points < selectedThemeCost
               }
-              className={`px-3 py-1 rounded text-xs ${
-                loadingTheme ||
+              className={`px-3 py-1 rounded text-xs ${loadingTheme ||
                 selectedTheme === theme ||
                 selectedThemeCost <= 0 ||
                 points < selectedThemeCost
-                  ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                  : "bg-emerald-600 text-white hover:bg-emerald-700"
-              }`}
+                ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                : "bg-emerald-600 text-white hover:bg-emerald-700"
+                }`}
             >
               {loadingTheme ? "Đang đổi..." : "Đổi theme"}
             </button>

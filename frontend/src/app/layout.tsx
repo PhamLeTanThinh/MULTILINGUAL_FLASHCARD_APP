@@ -2,10 +2,12 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
+import { RouteChangeIndicator } from '@/components/RouteChangeIndicator';
+import { RobotVerifyModal } from '@/components/RobotVerifyModal';
 
 const inter = Inter({ 
   subsets: ['latin', 'vietnamese'],
-  display: 'swap', // Tối ưu font loading
+  display: 'swap',
   variable: '--font-inter',
 });
 
@@ -15,24 +17,23 @@ export const metadata: Metadata = {
   icons: {
     icon: '/favicon.png',
   },
-  manifest: '/manifest.json', // PWA support
+  manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
     title: 'Flashcard App',
   },
   formatDetection: {
-    telephone: false, // Tránh tự động format số điện thoại
+    telephone: false,
   },
 };
 
-// Viewport configuration cho responsive tốt hơn
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 5, // Cho phép zoom
+  maximumScale: 5,
   userScalable: true,
-  viewportFit: 'cover', // Hỗ trợ notch/dynamic island
+  viewportFit: 'cover',
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#ffffff' },
     { media: '(prefers-color-scheme: dark)', color: '#0f172a' },
@@ -56,14 +57,15 @@ export default function RootLayout({
           overflow-x-hidden
           touch-manipulation
         `}
-        // Prevent double-tap zoom trên iOS
         style={{ WebkitTapHighlightColor: 'transparent' }}
       >
-        {/* Safe area cho notch/dynamic island */}
+        {/* Loading bar khi chuyển trang */}
+        <RouteChangeIndicator />
+
         <div className="min-h-screen pt-safe-top pb-safe-bottom pl-safe-left pr-safe-right">
           <Providers>
-            {/* Main content với responsive container */}
             <main className="relative flex flex-col min-h-screen">
+              <RobotVerifyModal />
               {children}
             </main>
           </Providers>

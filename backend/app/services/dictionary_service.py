@@ -3,6 +3,8 @@ from deep_translator import GoogleTranslator
 from ..schemas import DictionaryResult
 from functools import lru_cache
 from ..services.pronunciation import generate_pronunciation
+from pykakasi import kakasi
+
 
 class DictionaryService:
     def __init__(self):
@@ -13,7 +15,14 @@ class DictionaryService:
             "JA": "ja",
             "KO": "ko"
         }
-    
+
+        # Converter dùng cho tiếng Nhật: Kanji/Katakana -> Hiragana
+        self.kakasi = kakasi()
+        self.kakasi.setMode("J", "H")  # Kanji -> Hiragana
+        self.kakasi.setMode("K", "H")  # Katakana -> Hiragana
+        self.kakasi.setMode("H", "H")  # Hiragana giữ nguyên
+        self.kakasi_conv = self.kakasi.getConverter()
+
     @lru_cache(maxsize=1000)
     def _translate_cached(self, query: str, target_lang: str) -> str:
         """Cache translations to avoid repeated API calls"""
@@ -24,100 +33,89 @@ class DictionaryService:
         except Exception as e:
             print(f"Translation error: {e}")
             return query
-    
-    def _generate_dynamic_variations(self, query: str) -> List[str]:
-        """
-        Generate dynamic variations based on query context
-        Uses linguistic patterns, not hardcoded lists
-        """
-        variations = []
-        query_lower = query.lower().strip()
-        words = query_lower.split()
-        
-        # Single word queries - add common context
-        if len(words) == 1:
-            word = words[0]
-            
-            # For verbs, add object/time context
-            # These are PATTERNS, not hardcoded lists
-            common_verb_contexts = {
-                "time": ["buổi sáng", "buổi chiều", "buổi tối"],
-                "food": ["cơm", "nước"],
-                "intensity": ["nhiều", "một chút"]
-            }
-            
-            # Try adding food context for eating/drinking verbs
-            if any(indicator in word for indicator in ["ăn", "uống", "dùng"]):
-                for food in common_verb_contexts["food"]:
-                    variations.append(f"{word} {food}")
-            
-            # Try adding person context for greeting/social verbs
-            if any(indicator in word for indicator in ["chào", "cảm ơn", "xin lỗi"]):
-                variations.append(f"{word} bạn")
-                variations.append(f"xin {word}" if not word.startswith("xin") else word.replace("xin ", ""))
 
-        # Multi-word queries - try removing/adding politeness markers
-        else:
-            # Remove politeness if present
-            politeness_markers = ["xin", "kính", "vui lòng"]
-            for marker in politeness_markers:
-                if marker in words:
-                    without_marker = query_lower.replace(marker, "").strip()
-                    if without_marker and without_marker != query_lower:
-                        variations.append(without_marker)
-            
-            # Add politeness if not present
-            if not any(marker in words for marker in politeness_markers):
-                variations.append(f"xin {query_lower}")
-        
-        # Remove duplicates and empty strings
-        variations = [v.strip() for v in variations if v.strip() and v.strip() != query_lower]
-        variations = list(dict.fromkeys(variations))  # Remove duplicates while preserving order
-        
-        return variations[:5]  # Limit to 5 variations max
-    
-    def search_vietnamese(self, query: str, language: str, limit: int = 10) -> List[DictionaryResult]:
+    def _has_kanji(self, text: str) -> bool:
+        """Check if a Japanese string contains any Kanji (CJK Unified Ideographs)."""
+        for ch in text:
+            if '\u4e00' <= ch <= '\u9fff':
+                return True
+        return False
+
+    def _to_kana(self, text: str) -> str:
         """
-        Search and translate Vietnamese to target language using Google Translate
-        Returns main result + dynamic variations based on query context
+        Convert Japanese text (Kanji/Katakana/Hiragana mix) to pure Hiragana.
+        Dùng cho chế độ 'không Kanji'.
+
+        - Nếu CÓ Kanji: convert toàn bộ sang Hiragana (lấy cách đọc).
+        - Nếu KHÔNG có Kanji (toàn Hiragana/Katakana): giữ nguyên
+          → slang / từ vay mượn viết Katakana sẽ không bị đổi.
         """
-        results = []
-        seen_translations = set()  # Track unique translations
+        # Không có Kanji thì trả về nguyên bản (giữ Katakana)
+        if not self._has_kanji(text):
+            return text
+
+        try:
+            return self.kakasi_conv.do(text)
+        except Exception:
+            return text
+
+    def search_vietnamese(
+        self,
+        query: str,
+        language: str,
+        limit: int = 10,
+        kanji_only: bool = False
+    ) -> List[DictionaryResult]:
+        """
+        Search and translate Vietnamese to target language using Google Translate.
+        Chỉ trả về bản dịch chính (KHÔNG còn sinh biến thể như 'ăn nước').
+
+        - Với tiếng Nhật (JA):
+            + kanji_only = False -> hiển thị:
+                * Nếu có Kanji: chuyển sang Hiragana (reading)
+                * Nếu không có Kanji: giữ nguyên (Hiragana/Katakana)
+            + kanji_only = True  -> hiển thị Kanji, và nếu không có Kanji thì bỏ kết quả
+        - Các ngôn ngữ khác: giữ nguyên bản dịch Google Translate.
+        """
+        results: List[DictionaryResult] = []
         target_lang = self.lang_map.get(language, "en")
-        
-        # 1. Main translation
+
+        lang_upper = language.upper()
+        is_japanese = lang_upper == "JA"
+        apply_kanji_filter = is_japanese and kanji_only
+
+        query = query.strip()
+        if not query:
+            return results
+
+        # 1. Main translation duy nhất
         translated = self._translate_cached(query, target_lang)
-        
+
         if translated:
+            # Nếu tiếng Nhật và bật Kanji-only → bỏ mục không có Kanji
+            if apply_kanji_filter and not self._has_kanji(translated):
+                return results  # không có kết quả phù hợp
+
+            # Chọn text hiển thị
+            if is_japanese and not kanji_only:
+                # Chế độ "không Kanji":
+                # - nếu có Kanji: convert sang Hiragana (reading)
+                # - nếu không: giữ nguyên (slang Katakana không bị đổi)
+                display_text = self._to_kana(translated)
+            else:
+                # Giữ nguyên (Kanji cho JA khi kanji_only=True, và các ngôn ngữ khác)
+                display_text = translated
+
             pronunciation = generate_pronunciation(translated, language)
             results.append(DictionaryResult(
                 vietnamese=query,
                 pronunciation=pronunciation,
-                target_language=translated,
+                target_language=display_text,
                 language=language
             ))
-            seen_translations.add(translated)
-        
-        # 2. Dynamic variations - translate them too
-        variations = self._generate_dynamic_variations(query)
-        
-        for variation in variations:
-            if len(results) >= limit:
-                break
-            
-            var_translated = self._translate_cached(variation, target_lang)
-            
-            # Only add if translation is different from what we already have
-            if var_translated and var_translated not in seen_translations:
-                var_pronunciation = generate_pronunciation(var_translated, language)
-                results.append(DictionaryResult(
-                    vietnamese=variation,
-                    pronunciation=var_pronunciation,
-                    target_language=var_translated,
-                    language=language
-                ))
-                seen_translations.add(var_translated)
-        
+
+        # Không còn xử lý variations nữa
         return results
+
 
 dictionary_service = DictionaryService()
