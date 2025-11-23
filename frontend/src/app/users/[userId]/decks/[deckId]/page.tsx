@@ -376,6 +376,27 @@ export default function DeckDetailPage() {
 
         {/* Flashcards Table - Desktop */}
         <div className="hidden md:block bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transition-colors">
+          {/* Nút xóa tất cả flashcard */}
+          <div className="flex justify-end p-4">
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={async () => {
+                if (!flashcards || flashcards.length === 0) return toast('Không có flashcard để xóa');
+                if (confirm('Bạn có chắc muốn xóa tất cả các flashcard trong bộ này?')) {
+                  try {
+                    await flashcardApi.deleteAll(deckId);
+                    toast.success('Đã xóa tất cả flashcard!');
+                    refetch();
+                  } catch {
+                    toast.error('Xóa tất cả flashcard thất bại!');
+                  }
+                }
+              }}
+            >
+              <Trash2 className="w-4 h-4 mr-2" /> Xóa tất cả
+            </Button>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 dark:bg-gray-700 border-b dark:border-gray-600">
