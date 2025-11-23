@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
 import { RouteChangeIndicator } from '@/components/RouteChangeIndicator';
+import { ChatBox } from '@/components/ChatBox';
 
 const inter = Inter({ 
   subsets: ['latin', 'vietnamese'],
@@ -65,6 +66,7 @@ export default function RootLayout({
           <Providers>
             <main className="relative flex flex-col min-h-screen">
               {children}
+              {/* <ChatBox /> */}
             </main>
           </Providers>
         </div>

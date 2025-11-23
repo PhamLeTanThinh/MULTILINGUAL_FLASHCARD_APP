@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List
-from deep_translator import GoogleTranslator
+ 
 from .. import crud
 from ..database import get_db
-from ..services.pronunciation import generate_pronunciation
+ 
 import random
 
 router = APIRouter(prefix="/quiz", tags=["quiz"])
@@ -26,62 +26,26 @@ def generate_quiz_options(
     if not deck:
         raise HTTPException(status_code=404, detail="Deck not found")
     
-    # Language mapping
-    lang_map = {
-        "EN": "en",
-        "ZH": "zh-CN",
-        "JA": "ja",
-        "KO": "ko"
-    }
-    
-    target_lang = lang_map.get(language, "en")
+    # Không cần lang_map nữa
     
     try:
-        # Strategy: Generate semantically similar Vietnamese words using word association
-        similar_patterns = generate_similar_words(word_vietnamese, language)
-        
+        # Lấy tất cả flashcard trong deck, loại bỏ từ gốc
+        flashcards = crud.get_flashcards_by_deck(db, deck_id)
+        wrong_options = [fc for fc in flashcards if fc.target_language != word]
+        count = 4  # Luôn luôn lấy 4 đáp án sai
+        if len(wrong_options) < count:
+            raise HTTPException(status_code=400, detail="Không đủ flashcard để tạo 4 đáp án sai")
+
+        selected = random.sample(wrong_options, count)
         options = []
-        translator = GoogleTranslator(source='vi', target=target_lang)
-        
-        for similar_viet in similar_patterns[:count * 2]:
-            try:
-                translated = translator.translate(similar_viet)
-                
-                # Don't include the original word
-                if translated and translated != word and translated.strip():
-                    pronunciation = generate_pronunciation(translated, language)
-                    options.append({
-                        "text": translated,
-                        "pronunciation": pronunciation,
-                        "vietnamese": similar_viet
-                    })
-                    
-                    if len(options) >= count:
-                        break
-            except Exception as e:
-                print(f"Translation error for {similar_viet}: {e}")
-                continue
-        
-        # If still not enough, add more generic similar words
-        while len(options) < count:
-            fallback_words = get_fallback_similar_words(word_vietnamese, language)
-            for fallback in fallback_words:
-                if len(options) >= count:
-                    break
-                try:
-                    translated = translator.translate(fallback)
-                    if translated and translated != word:
-                        pronunciation = generate_pronunciation(translated, language)
-                        options.append({
-                            "text": translated,
-                            "pronunciation": pronunciation,
-                            "vietnamese": fallback
-                        })
-                except:
-                    continue
-        
-        return {"options": options[:count]}
-        
+        for fc in selected:
+            options.append({
+                "text": fc.target_language,
+                "pronunciation": fc.pronunciation,
+                "vietnamese": fc.vietnamese
+            })
+
+        return {"options": options}
     except Exception as e:
         print(f"Error generating options: {e}")
         raise HTTPException(status_code=500, detail=f"Error generating options: {str(e)}")
