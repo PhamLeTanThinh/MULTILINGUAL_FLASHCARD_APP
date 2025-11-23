@@ -130,6 +130,7 @@ export const flashcardApi = {
     target_language: string;
   }) => api.put<Flashcard>(`/flashcards/${id}`, data),
   delete: (id: number) => api.delete(`/flashcards/${id}`),
+  deleteAll: (deckId: number) => api.delete(`/flashcards/deck/${deckId}/all`),
   generateExample: (flashcardId: number, exampleType: 'sentence' | 'dialogue') =>
     api.post<ExampleResponse>(`/flashcards/${flashcardId}/generate-example`, null, {
       params: { example_type: exampleType }

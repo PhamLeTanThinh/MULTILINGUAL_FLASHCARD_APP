@@ -248,3 +248,11 @@ def generate_example(
     except Exception as e:
         print(f"Error generating example: {e}")
         raise HTTPException(status_code=500, detail=f"Error generating example: {str(e)}")
+@router.delete("/deck/{deck_id}/all", status_code=200)
+def delete_all_flashcards(deck_id: int, db: Session = Depends(get_db)):
+    """Xóa tất cả flashcard trong một deck"""
+    deck = crud.get_deck(db, deck_id)
+    if not deck:
+        raise HTTPException(status_code=404, detail="Deck not found")
+    count = crud.delete_flashcards_by_deck(db, deck_id)
+    return {"message": f"Đã xóa {count} flashcard", "count": count}

@@ -136,6 +136,12 @@ def get_flashcards_by_deck(db: Session, deck_id: int):
     """Lấy tất cả flashcards của deck"""
     return db.query(models.Flashcard).filter(models.Flashcard.deck_id == deck_id).all()
 
+def delete_flashcards_by_deck(db: Session, deck_id: int):
+    """Xóa tất cả flashcard của một deck, trả về số lượng đã xóa"""
+    count = db.query(models.Flashcard).filter(models.Flashcard.deck_id == deck_id).delete()
+    db.commit()
+    return count
+
 def get_flashcard(db: Session, flashcard_id: int):
     """Lấy flashcard theo ID"""
     return db.query(models.Flashcard).filter(models.Flashcard.id == flashcard_id).first()
