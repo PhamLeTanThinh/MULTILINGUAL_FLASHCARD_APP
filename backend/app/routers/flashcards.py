@@ -151,7 +151,7 @@ async def upload_csv(deck_id: int, file: UploadFile = File(...), db: Session = D
                 detail=f"No valid flashcards found. Errors: {'; '.join(errors)}"
             )
         
-        created = crud.create_flashcards_bulk(db, flashcards)
+        created = crud.create_flashcards_bulk(db, deck_id, [fc.dict() for fc in flashcards])
 
         # Loyalty: +5 * n flashcards
         try:
